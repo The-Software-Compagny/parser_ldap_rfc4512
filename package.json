@@ -1,0 +1,42 @@
+{
+  "name": "@the-software-compagny/parser_ldap_rfc4512",
+  "version": "0.0.1",
+  "description": "A parser for LDAP RFC 4512",
+  "repository": "https://github.com/The-Software-Compagny/parser_ldap_rfc4512.git",
+  "author": "tacxou <12997062+tacxou@users.noreply.github.com> (https://github.com/tacxou)",
+  "contributors": [
+    {
+      "name": " tacxou",
+      "email": "12997062+tacxou@users.noreply.github.com",
+      "url": "https://github.com/tacxou"
+    },
+    {
+      "name": "Contributors",
+      "url": "https://github.com/The-Software-Compagny/parser_ldap_rfc4512/graphs/contributors"
+    }
+  ],
+  "license": "BSD-3-Clause",
+  "main": "dist/index.js",
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --splitting",
+    "postbuild": "cpr README.md dist/README.md && cpr LICENSE dist/LICENSE && cpr package.json dist/package.json",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\""
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
+    "cpr": "^3.0.1",
+    "eslint": "^9.32.0",
+    "peggy": "^5.0.5",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
