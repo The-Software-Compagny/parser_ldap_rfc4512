@@ -1,7 +1,6 @@
 import { generate, type Parser, type ParserBuildOptions } from 'peggy'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import type { ParseResultInterface } from './interfaces'
 import { RFC4512ParserError, RFC4512ErrorType } from './interfaces'
 import type { LDAPSchemaType } from './types'
 
@@ -56,34 +55,10 @@ export class RFC4512Parser {
    * Parse an LDAP schema definition
    *
    * @param schemaDefinition - The schema definition to parse
-   * @returns Parse result with data or error
-   * @throws {RFC4512ParserError} When parsing fails with detailed error information
-   */
-  public parseSchema(schemaDefinition: string): ParseResultInterface {
-    try {
-      return this.parseSchemaStrict(schemaDefinition)
-    } catch (error) {
-      if (error instanceof RFC4512ParserError) {
-        return {
-          success: false,
-          error: error.getDetailedMessage()
-        }
-      }
-      return {
-        success: false,
-        error: `Parse error: ${error instanceof Error ? error.message : 'Unknown error'}`
-      }
-    }
-  }
-
-  /**
-   * Parse an LDAP schema definition with strict error handling (throws exceptions)
-   *
-   * @param schemaDefinition - The schema definition to parse
    * @returns Parsed schema data
    * @throws {RFC4512ParserError} When parsing fails with detailed error information
    */
-  public parseSchemaStrict(schemaDefinition: string): ParseResultInterface {
+  public parseSchema(schemaDefinition: string): LDAPSchemaType {
     try {
       // Clean input by removing extra whitespace
       const cleanInput = schemaDefinition.trim()
@@ -284,10 +259,7 @@ export class RFC4512Parser {
         }
       }
 
-      return {
-        success: true,
-        data: parsed
-      }
+      return parsed
 
     } catch (error) {
       // If it's already an RFC4512ParserError, re-throw it
@@ -317,9 +289,10 @@ export class RFC4512Parser {
    * Parse multiple schema definitions
    *
    * @param schemaDefinitions - Array of definitions to parse
-   * @returns Array of parse results
+   * @returns Array of parsed schema data
+   * @throws {RFC4512ParserError} When any parsing fails with detailed error information
    */
-  public parseMultipleSchemas(schemaDefinitions: string[]): ParseResultInterface[] {
+  public parseMultipleSchemas(schemaDefinitions: string[]): LDAPSchemaType[] {
     return schemaDefinitions.map(schema => this.parseSchema(schema))
   }
 
@@ -330,8 +303,12 @@ export class RFC4512Parser {
    * @returns true if valid, false otherwise
    */
   public isValidSchema(schemaDefinition: string): boolean {
-    const result = this.parseSchema(schemaDefinition)
-    return result.success
+    try {
+      this.parseSchema(schemaDefinition)
+      return true
+    } catch {
+      return false
+    }
   }
 
   /**
@@ -341,8 +318,12 @@ export class RFC4512Parser {
    * @returns The OID or null if not found
    */
   public extractOID(schemaDefinition: string): string | null {
-    const result = this.parseSchema(schemaDefinition);
-    return result.success ? result.data!.oid : null;
+    try {
+      const result = this.parseSchema(schemaDefinition);
+      return result.oid;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -352,8 +333,12 @@ export class RFC4512Parser {
    * @returns The name or null if not found
    */
   public extractName(schemaDefinition: string): string | null {
-    const result = this.parseSchema(schemaDefinition);
-    return result.success ? result.data!.name : null;
+    try {
+      const result = this.parseSchema(schemaDefinition);
+      return result.name;
+    } catch {
+      return null;
+    }
   }
 }
 

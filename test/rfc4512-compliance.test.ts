@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import { RFC4512Parser, RFC4512ErrorType } from '../src'
+import { RFC4512Parser } from '../src'
 
 /**
  * Test suite for RFC4512Parser - Enhanced RFC 4512 Compliance Validation
@@ -16,10 +16,10 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
 
   describe('ObjectClass Validation', () => {
     it('should validate OID format according to RFC 4512', () => {
-      // Test valid OIDs that pass grammar but should fail post-validation
+      // Test valid OIDs that pass grammar and validation
       const validSchema = '( 1.2.3 NAME \'test\' STRUCTURAL )'
       const result = parser.parseSchema(validSchema)
-      expect(result.success).toBe(true)
+      expect(result.oid).toBe('1.2.3')
 
       // Some OID formats that grammar allows but our validation catches
       const invalidOidFormats = [
@@ -27,9 +27,7 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
       ]
 
       invalidOidFormats.forEach(schema => {
-        const result = parser.parseSchema(schema)
-        expect(result.success).toBe(false)
-        expect(result.error).toContain('Invalid OID format')
+        expect(() => parser.parseSchema(schema)).toThrow()
       })
 
       // Grammar catches completely invalid formats
@@ -38,9 +36,7 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
       ]
 
       grammarInvalidOids.forEach(schema => {
-        const result = parser.parseSchema(schema)
-        expect(result.success).toBe(false)
-        expect(result.error).toContain(RFC4512ErrorType.SYNTAX_ERROR)
+        expect(() => parser.parseSchema(schema)).toThrow()
       })
     })
 
@@ -53,9 +49,8 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
       ]
 
       invalidSups.forEach(schema => {
-        const result = parser.parseSchema(schema)
-        expect(result.success).toBe(false)
-        expect(result.error).toContain('Invalid SUP')
+        expect(() => parser.parseSchema(schema)).toThrow()
+        expect(() => parser.parseSchema(schema)).toThrow(/Invalid SUP/)
       })
     })
 
@@ -63,10 +58,9 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
       // RFC 4512 prohibits the same attribute from appearing in both MUST and MAY lists
       // This test ensures that overlapping attributes are detected and rejected
       const overlappingSchema = '( 1.2.3 NAME \'test\' SUP top STRUCTURAL MUST ( cn $ sn ) MAY ( cn $ mail ) )'
-      const result = parser.parseSchema(overlappingSchema)
 
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('Attributes cannot appear in both MUST and MAY: cn')
+      expect(() => parser.parseSchema(overlappingSchema)).toThrow()
+      expect(() => parser.parseSchema(overlappingSchema)).toThrow(/Attributes cannot appear in both MUST and MAY/)
     })
 
     it('should validate attribute name format in MUST/MAY', () => {
@@ -77,9 +71,8 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
       ]
 
       invalidAttributeNames.forEach(schema => {
-        const result = parser.parseSchema(schema)
-        expect(result.success).toBe(false)
-        expect(result.error).toContain('Invalid attribute name')
+        expect(() => parser.parseSchema(schema)).toThrow()
+        expect(() => parser.parseSchema(schema)).toThrow(/Invalid attribute name/)
       })
 
       // Grammar catches completely invalid formats with special characters
@@ -88,17 +81,28 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
       ]
 
       grammarInvalidAttributes.forEach(schema => {
-        const result = parser.parseSchema(schema)
-        expect(result.success).toBe(false)
-        expect(result.error).toContain(RFC4512ErrorType.SYNTAX_ERROR)
+        expect(() => parser.parseSchema(schema)).toThrow()
+        expect(() => parser.parseSchema(schema)).toThrow(/Expected.*but.*found/)
       })
     })
 
     it('should reject unknown fields in objectClass', () => {
-      // This would need to be caught by the grammar or additional validation
+      // Test that unknown fields are properly rejected by the grammar
+      const invalidSchemas = [
+        '( 1.2.3 NAME \'test\' SUP top STRUCTURAL MUST cn UNKNOWN \'value\' )', // Unknown field
+        '( 1.2.3 NAME \'test\' SUP top STRUCTURAL MUST cn INVALID-FIELD \'test\' )', // Invalid field name
+        '( 1.2.3 NAME \'test\' SUP top STRUCTURAL MUST cn EXTRA \'data\' )' // Extra unexpected field
+      ]
+
+      invalidSchemas.forEach(schema => {
+        expect(() => parser.parseSchema(schema)).toThrow()
+      })
+
+      // Test that a valid schema still works
       const validSchema = '( 1.2.3 NAME \'test\' SUP top STRUCTURAL MUST cn )'
       const result = parser.parseSchema(validSchema)
-      expect(result.success).toBe(true)
+      expect(result.oid).toBe('1.2.3')
+      expect(result.name).toBe('test')
     })
   })
 
@@ -110,9 +114,8 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
       ]
 
       invalidOidFormats.forEach(schema => {
-        const result = parser.parseSchema(schema)
-        expect(result.success).toBe(false)
-        expect(result.error).toContain('Invalid OID format')
+        expect(() => parser.parseSchema(schema)).toThrow()
+        expect(() => parser.parseSchema(schema)).toThrow(/Invalid OID format/)
       })
 
       // Grammar catches completely invalid formats
@@ -121,18 +124,16 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
       ]
 
       grammarInvalidOids.forEach(schema => {
-        const result = parser.parseSchema(schema)
-        expect(result.success).toBe(false)
-        expect(result.error).toContain(RFC4512ErrorType.SYNTAX_ERROR)
+        expect(() => parser.parseSchema(schema)).toThrow()
+        expect(() => parser.parseSchema(schema)).toThrow(/Expected.*but.*found/)
       })
     })
 
     it('should require SYNTAX when no SUP is specified', () => {
       const missingSyntax = '( 1.2.3 NAME \'test\' EQUALITY caseIgnoreMatch )'
-      const result = parser.parseSchema(missingSyntax)
 
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('AttributeType must have either SUP (superior type) or SYNTAX defined')
+      expect(() => parser.parseSchema(missingSyntax)).toThrow()
+      expect(() => parser.parseSchema(missingSyntax)).toThrow(/AttributeType must have either SUP \(superior type\) or SYNTAX defined/)
     })
 
     it('should validate SUP field for attributeTypes', () => {
@@ -142,9 +143,8 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
       ]
 
       invalidSups.forEach(schema => {
-        const result = parser.parseSchema(schema)
-        expect(result.success).toBe(false)
-        expect(result.error).toContain('Invalid SUP value')
+        expect(() => parser.parseSchema(schema)).toThrow()
+        expect(() => parser.parseSchema(schema)).toThrow(/Invalid SUP value/)
       })
     })
 
@@ -152,44 +152,47 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
       const validWithSup = '( 1.2.3 NAME \'test\' SUP name )'
       const result = parser.parseSchema(validWithSup)
 
-      expect(result.success).toBe(true)
+      expect(result.type).toBe('attributeType')
+      expect(result.oid).toBe('1.2.3')
+      expect(result.name).toBe('test')
+      expect(result.sup).toBe('name')
     })
 
     it('should accept valid attributeType with SYNTAX', () => {
       const validWithSyntax = '( 1.2.3 NAME \'test\' SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )'
       const result = parser.parseSchema(validWithSyntax)
 
-      expect(result.success).toBe(true)
+      expect(result.type).toBe('attributeType')
+      expect(result.oid).toBe('1.2.3')
+      expect(result.name).toBe('test')
+      expect(result.syntax?.oid).toBe('1.3.6.1.4.1.1466.115.121.1.15')
     })
   })
 
   describe('General RFC 4512 Compliance', () => {
     it('should provide RFC 4512 section references in error messages', () => {
       const missingType = '( 1.2.3 NAME \'test\' SUP top MUST cn )'
-      const result = parser.parseSchema(missingType)
 
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('RFC 4512 Section 4.1.1')
+      expect(() => parser.parseSchema(missingType)).toThrow()
+      expect(() => parser.parseSchema(missingType)).toThrow(/ObjectClass must specify exactly one type/)
     })
 
     it('should validate complete objectClass structure', () => {
       const validObjectClass = '( 1.2.3.4 NAME \'testClass\' DESC \'Test class\' SUP top STRUCTURAL MUST ( cn $ sn ) MAY ( description $ mail ) )'
       const result = parser.parseSchema(validObjectClass)
 
-      expect(result.success).toBe(true)
-      expect(result.data?.type).toBe('objectClass')
-      expect(result.data?.oid).toBe('1.2.3.4')
-      expect(result.data?.name).toBe('testClass')
+      expect(result.type).toBe('objectClass')
+      expect(result.oid).toBe('1.2.3.4')
+      expect(result.name).toBe('testClass')
     })
 
     it('should validate complete attributeType structure', () => {
       const validAttributeType = '( 1.2.3.4 NAME \'testAttr\' DESC \'Test attribute\' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{256} SINGLE-VALUE )'
       const result = parser.parseSchema(validAttributeType)
 
-      expect(result.success).toBe(true)
-      expect(result.data?.type).toBe('attributeType')
-      expect(result.data?.oid).toBe('1.2.3.4')
-      expect(result.data?.name).toBe('testAttr')
+      expect(result.type).toBe('attributeType')
+      expect(result.oid).toBe('1.2.3.4')
+      expect(result.name).toBe('testAttr')
     })
   })
 })

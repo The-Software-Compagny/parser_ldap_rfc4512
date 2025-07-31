@@ -16,15 +16,15 @@ describe('RFC4512ParserError', () => {
     parser = new RFC4512Parser()
   })
 
-  describe('parseSchemaStrict method', () => {
+  describe('parseSchema method', () => {
     test('should throw RFC4512ParserError for empty input', () => {
       // Test that empty input triggers EMPTY_INPUT error type
       expect(() => {
-        parser.parseSchemaStrict('')
+        parser.parseSchema('')
       }).toThrow(RFC4512ParserError)
 
       try {
-        parser.parseSchemaStrict('')
+        parser.parseSchema('')
       } catch (error) {
         expect(error).toBeInstanceOf(RFC4512ParserError)
         expect((error as RFC4512ParserError).errorType).toBe(RFC4512ErrorType.EMPTY_INPUT)
@@ -38,11 +38,11 @@ describe('RFC4512ParserError', () => {
       const schema = "( 2.5.6.6 NAME 'test' DESC 'Test objectClass without type' SUP top MUST ( cn ) )"
 
       expect(() => {
-        parser.parseSchemaStrict(schema)
+        parser.parseSchema(schema)
       }).toThrow(RFC4512ParserError)
 
       try {
-        parser.parseSchemaStrict(schema)
+        parser.parseSchema(schema)
       } catch (error) {
         expect(error).toBeInstanceOf(RFC4512ParserError)
         expect((error as RFC4512ParserError).errorType).toBe(RFC4512ErrorType.OBJECTCLASS_ERROR)
@@ -56,11 +56,11 @@ describe('RFC4512ParserError', () => {
       const schema = "( 2.5.6.6 NAME 'test' DESC 'Test overlap' STRUCTURAL MUST ( cn ) MAY ( cn ) )"
 
       expect(() => {
-        parser.parseSchemaStrict(schema)
+        parser.parseSchema(schema)
       }).toThrow(RFC4512ParserError)
 
       try {
-        parser.parseSchemaStrict(schema)
+        parser.parseSchema(schema)
       } catch (error) {
         expect(error).toBeInstanceOf(RFC4512ParserError)
         expect((error as RFC4512ParserError).errorType).toBe(RFC4512ErrorType.VALIDATION_ERROR)
@@ -73,11 +73,11 @@ describe('RFC4512ParserError', () => {
       const schema = "( 2.5.6.6 NAME 'test' DESC 'Test invalid SUP' SUP STRUCTURAL STRUCTURAL )"
 
       expect(() => {
-        parser.parseSchemaStrict(schema)
+        parser.parseSchema(schema)
       }).toThrow(RFC4512ParserError)
 
       try {
-        parser.parseSchemaStrict(schema)
+        parser.parseSchema(schema)
       } catch (error) {
         expect(error).toBeInstanceOf(RFC4512ParserError)
         expect((error as RFC4512ParserError).errorType).toBe(RFC4512ErrorType.INVALID_FIELD)
@@ -90,11 +90,11 @@ describe('RFC4512ParserError', () => {
       const schema = "( 2.5.6.6 NAME 'test' invalid-syntax )"
 
       expect(() => {
-        parser.parseSchemaStrict(schema)
+        parser.parseSchema(schema)
       }).toThrow(RFC4512ParserError)
 
       try {
-        parser.parseSchemaStrict(schema)
+        parser.parseSchema(schema)
       } catch (error) {
         expect(error).toBeInstanceOf(RFC4512ParserError)
         expect((error as RFC4512ParserError).errorType).toBe(RFC4512ErrorType.SYNTAX_ERROR)
@@ -108,7 +108,7 @@ describe('RFC4512ParserError', () => {
       const schema = "( 2.5.6.6 NAME 'test' STRUCTURAL MUST ( cn ) MAY ( cn ) )"
 
       try {
-        parser.parseSchemaStrict(schema)
+        parser.parseSchema(schema)
       } catch (error) {
         expect(error).toBeInstanceOf(RFC4512ParserError)
         const detailedMessage = (error as RFC4512ParserError).getDetailedMessage()
@@ -123,7 +123,7 @@ describe('RFC4512ParserError', () => {
       const schema = "( 2.5.6.6 NAME 'test' STRUCTURAL MUST ( cn ) MAY ( cn ) )"
 
       try {
-        parser.parseSchemaStrict(schema)
+        parser.parseSchema(schema)
       } catch (error) {
         expect(error).toBeInstanceOf(RFC4512ParserError)
         const json = (error as RFC4512ParserError).toJSON()
@@ -135,35 +135,49 @@ describe('RFC4512ParserError', () => {
     })
   })
 
-  describe('parseSchema method (backward compatibility)', () => {
-    test('should return ParseResultInterface with detailed error for empty input', () => {
-      // Test that the original parseSchema method still works and provides detailed errors
-      const result = parser.parseSchema('')
-
-      expect(result.success).toBe(false)
-      expect(result.error).toContain(RFC4512ErrorType.EMPTY_INPUT)
-      expect(result.error).toContain('Schema definition cannot be empty')
+  describe('parseSchema method - exception-based API', () => {
+    test('should throw RFC4512ParserError for empty input', () => {
+      // Test that the parseSchema method throws RFC4512ParserError with detailed information
+      try {
+        parser.parseSchema('')
+        expect.unreachable('Should have thrown an error')
+      } catch (error) {
+        expect(error).toBeInstanceOf(RFC4512ParserError)
+        const rfc4512Error = error as RFC4512ParserError
+        expect(rfc4512Error.errorType).toBe(RFC4512ErrorType.EMPTY_INPUT)
+        expect(rfc4512Error.message).toContain('Schema definition cannot be empty')
+      }
     })
 
-    test('should return ParseResultInterface with detailed error for validation error', () => {
-      // Test backward compatibility with detailed error messages in ParseResultInterface
+    test('should throw RFC4512ParserError for validation error', () => {
+      // Test that validation errors are thrown as RFC4512ParserError with detailed information
       const schema = "( 2.5.6.6 NAME 'test' STRUCTURAL MUST ( cn ) MAY ( cn ) )"
-      const result = parser.parseSchema(schema)
 
-      expect(result.success).toBe(false)
-      expect(result.error).toContain(RFC4512ErrorType.VALIDATION_ERROR)
-      expect(result.error).toContain('cannot appear in both MUST and MAY')
-      expect(result.error).toContain('Context:')
+      try {
+        parser.parseSchema(schema)
+        expect.unreachable('Should have thrown an error')
+      } catch (error) {
+        expect(error).toBeInstanceOf(RFC4512ParserError)
+        const rfc4512Error = error as RFC4512ParserError
+        expect(rfc4512Error.errorType).toBe(RFC4512ErrorType.VALIDATION_ERROR)
+        expect(rfc4512Error.message).toContain('cannot appear in both MUST and MAY')
+        expect(rfc4512Error.getDetailedMessage()).toContain('Context:')
+      }
     })
 
-    test('should return ParseResultInterface with detailed error for syntax error', () => {
-      // Test that syntax errors include position information in ParseResultInterface
+    test('should throw RFC4512ParserError for syntax error', () => {
+      // Test that syntax errors include position information
       const schema = "( 2.5.6.6 NAME 'test' invalid-syntax )"
-      const result = parser.parseSchema(schema)
 
-      expect(result.success).toBe(false)
-      expect(result.error).toContain(RFC4512ErrorType.SYNTAX_ERROR)
-      expect(result.error).toContain('at line 1, column')
+      try {
+        parser.parseSchema(schema)
+        expect.unreachable('Should have thrown an error')
+      } catch (error) {
+        expect(error).toBeInstanceOf(RFC4512ParserError)
+        const rfc4512Error = error as RFC4512ParserError
+        expect(rfc4512Error.errorType).toBe(RFC4512ErrorType.SYNTAX_ERROR)
+        expect(rfc4512Error.getDetailedMessage()).toContain('at line 1, column')
+      }
     })
   })
 

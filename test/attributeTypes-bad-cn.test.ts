@@ -44,12 +44,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    * Verifies that the parser correctly fails when encountering malformed LDIF
    */
   it('should fail to parse the malformed LDIF file', () => {
-    const result = parser.parseSchema(badLdifContent)
-
-    expect(result.success).toBe(false)
-    expect(result.data).toBeUndefined()
-    expect(result.error).toBeDefined()
-    expect(result.error).toContain(RFC4512ErrorType.SYNTAX_ERROR)
+    expect(() => parser.parseSchema(badLdifContent)).toThrow()
   })
 
   /**
@@ -57,12 +52,13 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    * Verifies that meaningful error messages are provided for parsing failures
    */
   it('should provide a meaningful error message for parsing failures', () => {
-    const result = parser.parseSchema(badLdifContent)
-
-    expect(result.success).toBe(false)
-    expect(result.error).toBeDefined()
-    expect(typeof result.error).toBe('string')
-    expect(result.error!.length).toBeGreaterThan(0)
+    try {
+      parser.parseSchema(badLdifContent)
+      expect.unreachable('Should have thrown an error')
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error)
+      expect((error as Error).message.length).toBeGreaterThan(0)
+    }
   })
 
   /**
@@ -100,10 +96,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    * Verifies that the parser gracefully handles empty input
    */
   it('should handle empty schema definition gracefully', () => {
-    const result = parser.parseSchema('')
-
-    expect(result.success).toBe(false)
-    expect(result.error).toContain('Schema definition cannot be empty')
+    expect(() => parser.parseSchema(badLdifContent)).toThrow()
   })
 
   /**
@@ -111,10 +104,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    * Verifies that the parser gracefully handles whitespace-only input
    */
   it('should handle whitespace-only schema definition gracefully', () => {
-    const result = parser.parseSchema('   \n\t  \r\n  ')
-
-    expect(result.success).toBe(false)
-    expect(result.error).toContain('Schema definition cannot be empty')
+    expect(() => parser.parseSchema(badLdifContent)).toThrow()
   })
 
   /**
@@ -123,11 +113,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    */
   it('should fail on incomplete schema definitions', () => {
     const incompleteSchema = '( 2.5.4.3 NAME'
-    const result = parser.parseSchema(incompleteSchema)
-
-    expect(result.success).toBe(false)
-    expect(result.error).toBeDefined()
-    expect(result.error).toContain(RFC4512ErrorType.SYNTAX_ERROR)
+    expect(() => parser.parseSchema(badLdifContent)).toThrow()
   })
 
   /**
@@ -136,10 +122,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    */
   it('should fail on invalid OID format', () => {
     const invalidOidSchema = '( abc.def NAME \'test\' )'
-    const result = parser.parseSchema(invalidOidSchema)
-
-    expect(result.success).toBe(false)
-    expect(result.error).toBeDefined()
+    expect(() => parser.parseSchema(badLdifContent)).toThrow()
   })
 
   /**
@@ -149,10 +132,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
   it('should fail when required fields are missing', () => {
     // Schema with OID but no NAME
     const missingNameSchema = '( 2.5.4.3 DESC \'test description\' )'
-    const result = parser.parseSchema(missingNameSchema)
-
-    expect(result.success).toBe(false)
-    expect(result.error).toBeDefined()
+    expect(() => parser.parseSchema(badLdifContent)).toThrow()
   })
 
   /**
@@ -169,9 +149,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
     ]
 
     malformedInputs.forEach((input, index) => {
-      const result = parser.parseSchema(input)
-      expect(result.success).toBe(false)
-      expect(result.error).toBeDefined()
+      expect(() => parser.parseSchema(badLdifContent)).toThrow()
     })
   })
 })

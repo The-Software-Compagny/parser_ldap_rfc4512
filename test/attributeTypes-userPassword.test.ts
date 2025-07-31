@@ -45,10 +45,8 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
     const result = parser.parseSchema(ldifContent)
 
     // Verify that parsing succeeded
-    expect(result.success).toBe(true)
-    expect(result.data).toBeDefined()
-    expect(result.error).toBeUndefined()
-  })
+        expect(result).toBeDefined()
+    })
 
   /**
    * Test: OID extraction
@@ -58,8 +56,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
   it('should correctly extract the OID from the userPassword attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.oid).toBe('2.5.4.35')
+    expect(result.oid).toBe('2.5.4.35')
   })
 
   /**
@@ -70,8 +67,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
   it('should correctly extract the NAME from the userPassword attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.name).toBe('userPassword')
+    expect(result.name).toBe('userPassword')
   })
 
   /**
@@ -82,8 +78,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
   it('should correctly extract the DESCRIPTION from the userPassword attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.desc).toBe('User Password')
+    expect(result.desc).toBe('User Password')
   })
 
   /**
@@ -94,8 +89,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
   it('should correctly extract the EQUALITY matching rule', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.equality).toBe('octetStringMatch')
+    expect(result.equality).toBe('octetStringMatch')
   })
 
   /**
@@ -106,8 +100,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
   it('should correctly extract the SYNTAX', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.syntax?.oid).toBe('1.3.6.1.4.1.1466.115.121.1.40')
+    expect(result.syntax?.oid).toBe('1.3.6.1.4.1.1466.115.121.1.40')
   })
 
   /**
@@ -118,8 +111,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
   it('should correctly extract the SYNTAX length limitation', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.syntax?.length).toBe(128)
+    expect(result.syntax?.length).toBe(128)
   })
 
   /**
@@ -130,8 +122,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
   it('should correctly detect that userPassword does not specify SINGLE-VALUE', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.singleValue).toBe(false)
+    expect(result.singleValue).toBe(false)
   })
 
   /**
@@ -142,8 +133,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
   it('should detect the attributeType schema type', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.type).toBe('attributeType')
+    expect(result.type).toBe('attributeType')
   })
 
   /**

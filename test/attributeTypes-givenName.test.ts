@@ -41,10 +41,8 @@ describe('RFC4512Parser - givenName AttributeType LDIF', () => {
   it('should successfully parse the givenName attributeType LDIF file', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data).toBeDefined()
-    expect(result.error).toBeUndefined()
-  })
+        expect(result).toBeDefined()
+    })
 
   /**
    * Test: OID extraction
@@ -54,8 +52,7 @@ describe('RFC4512Parser - givenName AttributeType LDIF', () => {
   it('should correctly extract the OID from the givenName attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.oid).toBe('2.5.4.42')
+    expect(result.oid).toBe('2.5.4.42')
   })
 
   /**
@@ -66,8 +63,7 @@ describe('RFC4512Parser - givenName AttributeType LDIF', () => {
   it('should correctly extract the NAME from the givenName attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.name).toBe('givenName')
+    expect(result.name).toBe('givenName')
   })
 
   /**
@@ -78,8 +74,7 @@ describe('RFC4512Parser - givenName AttributeType LDIF', () => {
   it('should correctly extract the DESCRIPTION from the givenName attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.desc).toBe('RFC2256: first name(s) for which the entity is known by')
+    expect(result.desc).toBe('RFC2256: first name(s) for which the entity is known by')
   })
 
   /**
@@ -90,8 +85,7 @@ describe('RFC4512Parser - givenName AttributeType LDIF', () => {
   it('should correctly extract the SUP from the givenName attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.sup).toBe('name')
+    expect(result.sup).toBe('name')
   })
 
   /**
@@ -102,8 +96,7 @@ describe('RFC4512Parser - givenName AttributeType LDIF', () => {
   it('should detect the attributeType schema type', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.type).toBe('attributeType')
+    expect(result.type).toBe('attributeType')
   })
 
   /**

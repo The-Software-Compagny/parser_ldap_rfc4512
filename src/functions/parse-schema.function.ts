@@ -1,15 +1,16 @@
 import type { ParserBuildOptions } from 'peggy'
 import RFC4512Parser from '../rfc4512.parser'
-import type { ParseResultInterface } from '../interfaces'
+import type { LDAPSchemaType } from '../types'
 
 /**
  * Utility function to parse a schema definition
  * (shortcut for creating an instance and parsing)
- * 
+ *
  * @param schemaDefinition - The definition to parse
- * @returns Parse result
+ * @returns Parsed schema data
+ * @throws {RFC4512ParserError} When parsing fails with detailed error information
  */
-export function parseSchema(schemaDefinition: string, options?: ParserBuildOptions): ParseResultInterface {
-    const parser = new RFC4512Parser(options)
-    return parser.parseSchema(schemaDefinition)
-  }
+export function parseSchema(schemaDefinition: string, options?: ParserBuildOptions): LDAPSchemaType {
+  const parser = new RFC4512Parser(options)
+  return parser.parseSchema(schemaDefinition)
+}

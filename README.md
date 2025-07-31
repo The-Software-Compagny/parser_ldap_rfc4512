@@ -25,11 +25,63 @@ bun install
 
 ## Usage
 
-To run the example:
+### As a Library
+
+```typescript
+import { parseSchema } from '@the-software-compagny/parser_ldap_rfc4512'
+
+const result = parseSchema(`
+  ( 2.5.6.6
+    NAME 'person'
+    DESC 'RFC2256: a person'
+    SUP top
+    STRUCTURAL
+    MUST ( sn $ cn )
+    MAY ( userPassword $ telephoneNumber )
+  )
+`)
+
+if (result.success) {
+  console.log('Parsed schema:', result.data)
+} else {
+  console.error('Parse error:', result.error)
+}
+```
+
+### As a CLI Tool
+
+This package includes a command-line interface for parsing LDAP schema definitions.
+
+#### Installation
 
 ```bash
-bun run index.ts
+# Install globally
+npm install -g @the-software-compagny/parser_ldap_rfc4512
+
+# Or use locally after building
+bun run build
 ```
+
+#### CLI Usage
+
+```bash
+# Parse from command line
+rfc4512-parser "( 2.5.6.6 NAME 'person' SUP top STRUCTURAL )"
+
+# Parse from file
+rfc4512-parser --input schema.ldif
+
+# Output as JSON
+rfc4512-parser --input schema.ldif --format json
+
+# Save to file
+rfc4512-parser --input schema.ldif --output result.json
+
+# Verbose mode
+rfc4512-parser --input schema.ldif --verbose
+```
+
+[CLI Usage](CLI_USAGE.md) provides detailed instructions on how to use the command-line interface, including installation and examples.
 
 ### Example Schema Definition
 
@@ -62,14 +114,18 @@ This will be parsed into a structured object:
 
 ## Project Structure
 
-```
-src/
-├── index.ts              # Main parser implementation
-└── grammar/
-    └── rfc4512.pegjs     # PEG.js grammar definition
-test/
-├── sample-olcAttributeTypes.ldif    # Sample attribute type definitions
-└── sample-olcObjectClasses.ldif     # Sample object class definitions
+```bash
+.
+├── .vscode/                               # VS Code workspace settings and tasks configuration
+├── dist/                                  # Build output directory containing compiled JavaScript files
+├── src/                                   # Source code directory
+│   ├── _grammars/                         # PEG.js grammar definitions for parsing RFC 4512
+│   ├── errors/                            # Error handling classes, interfaces and enumerations
+│   ├── functions/                         # Utility functions including the main schema parsing logic
+│   ├── interfaces/                        # TypeScript interfaces for LDAP schema components
+│   └── types/                             # TypeScript type definitions for LDAP structures
+├── test/                                  # Test files and test data
+└── [configuration files]                  # Various config files (.editorconfig, .eslintrc.js, etc.)
 ```
 
 ## Grammar Components
@@ -83,10 +139,6 @@ The PEG.js grammar supports the following LDAP schema components:
 - **Object Class Types**: STRUCTURAL, AUXILIARY, or ABSTRACT
 - **MUST**: Required attributes list
 - **MAY**: Optional attributes list
-
-## Development
-
-This project was created using `bun init` in bun v1.1.27. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
 
 ## License
 

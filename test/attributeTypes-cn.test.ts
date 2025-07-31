@@ -45,10 +45,8 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
     const result = parser.parseSchema(ldifContent)
 
     // Verify that parsing succeeded
-    expect(result.success).toBe(true)
-    expect(result.data).toBeDefined()
-    expect(result.error).toBeUndefined()
-  })
+        expect(result).toBeDefined()
+    })
 
   /**
    * Test: OID extraction
@@ -58,8 +56,7 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
   it('should correctly extract the OID from the cn attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.oid).toBe('2.5.4.3')
+    expect(result.oid).toBe('2.5.4.3')
   })
 
   /**
@@ -70,8 +67,7 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
   it('should correctly extract the NAME from the cn attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.name).toBe('cn')
+    expect(result.name).toBe('cn')
   })
 
   /**
@@ -82,8 +78,7 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
   it('should correctly extract the DESCRIPTION from the cn attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.desc).toBe('Common Name')
+    expect(result.desc).toBe('Common Name')
   })
 
   /**
@@ -94,8 +89,7 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
   it('should correctly extract the EQUALITY matching rule', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.equality).toBe('caseIgnoreMatch')
+    expect(result.equality).toBe('caseIgnoreMatch')
   })
 
   /**
@@ -106,8 +100,7 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
   it('should correctly extract the SYNTAX', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.syntax?.oid).toBe('1.3.6.1.4.1.1466.115.121.1.15')
+    expect(result.syntax?.oid).toBe('1.3.6.1.4.1.1466.115.121.1.15')
   })
 
   /**
@@ -118,8 +111,7 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
   it('should correctly detect SINGLE-VALUE', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.singleValue).toBe(true)
+    expect(result.singleValue).toBe(true)
   })
 
   /**
@@ -130,8 +122,7 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
   it('should detect the attributeType schema type', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.type).toBe('attributeType')
+    expect(result.type).toBe('attributeType')
   })
 
   /**

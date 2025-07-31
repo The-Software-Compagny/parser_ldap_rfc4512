@@ -47,9 +47,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
     const result = parser.parseSchema(ldifContent)
 
     // Verify that parsing succeeded
-    expect(result.success).toBe(true)
-    expect(result.data).toBeDefined()
-    expect(result.error).toBeUndefined()
+    expect(result).toBeDefined()
   })
 
   /**
@@ -60,8 +58,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
   it('should correctly extract the OID from the person objectClass', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.oid).toBe('2.5.6.6')
+    expect(result.oid).toBe('2.5.6.6')
   })
 
   /**
@@ -72,8 +69,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
   it('should correctly extract the NAME from the person objectClass', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.name).toBe('person')
+    expect(result.name).toBe('person')
   })
 
   /**
@@ -84,8 +80,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
   it('should correctly extract the DESCRIPTION from the person objectClass', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.desc).toBe('RFC2256: a person')
+    expect(result.desc).toBe('RFC2256: a person')
   })
 
   /**
@@ -96,8 +91,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
   it('should correctly extract the SUP (superior class)', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.sup).toBe('top')
+    expect(result.sup).toBe('top')
   })
 
   /**
@@ -108,8 +102,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
   it('should correctly detect the objectClass type', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.type).toBe('objectClass')
+    expect(result.type).toBe('objectClass')
   })
 
   /**
@@ -120,10 +113,9 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
   it('should correctly extract the STRUCTURAL objectClass type', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
     // Verify it's an objectClass and cast to access objectClassType
-    if (result.data?.type === 'objectClass') {
-      expect(result.data.objectClassType).toBe('STRUCTURAL')
+    if (result.type === 'objectClass') {
+      expect(result.objectClassType).toBe('STRUCTURAL')
     }
   })
 
@@ -135,9 +127,8 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
   it('should correctly extract the MUST attributes', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    if (result.data?.type === 'objectClass') {
-      expect(result.data.must).toEqual(['sn', 'cn'])
+    if (result.type === 'objectClass') {
+      expect(result.must).toEqual(['sn', 'cn'])
     }
   })
 
@@ -149,9 +140,8 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
   it('should correctly extract the MAY attributes', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    if (result.data?.type === 'objectClass') {
-      expect(result.data.may).toEqual(['userPassword', 'telephoneNumber'])
+    if (result.type === 'objectClass') {
+      expect(result.may).toEqual(['userPassword', 'telephoneNumber'])
     }
   })
 
@@ -197,9 +187,9 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
     const results = parser.parseMultipleSchemas([ldifContent, ldifContent])
 
     expect(results).toHaveLength(2)
-    expect(results[0].success).toBe(true)
-    expect(results[1].success).toBe(true)
-    expect(results[0].data?.name).toBe('person')
-    expect(results[1].data?.name).toBe('person')
+    expect(results[0]).toBeDefined()
+    expect(results[1]).toBeDefined()
+    expect(results[0].name).toBe('person')
+    expect(results[1].name).toBe('person')
   })
 })

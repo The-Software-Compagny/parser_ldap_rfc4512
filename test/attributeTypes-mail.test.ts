@@ -43,10 +43,8 @@ describe('RFC4512Parser - mail AttributeType LDIF', () => {
   it('should successfully parse the mail attributeType LDIF file', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data).toBeDefined()
-    expect(result.error).toBeUndefined()
-  })
+        expect(result).toBeDefined()
+    })
 
   /**
    * Test: OID extraction
@@ -56,8 +54,7 @@ describe('RFC4512Parser - mail AttributeType LDIF', () => {
   it('should correctly extract the OID from the mail attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.oid).toBe('0.9.2342.19200300.100.1.3')
+    expect(result.oid).toBe('0.9.2342.19200300.100.1.3')
   })
 
   /**
@@ -68,8 +65,7 @@ describe('RFC4512Parser - mail AttributeType LDIF', () => {
   it('should correctly extract the NAME from the mail attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.name).toBe('mail')
+    expect(result.name).toBe('mail')
   })
 
   /**
@@ -80,8 +76,7 @@ describe('RFC4512Parser - mail AttributeType LDIF', () => {
   it('should correctly extract the DESCRIPTION from the mail attributeType', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.desc).toBe('RFC1274: RFC822 Mailbox')
+    expect(result.desc).toBe('RFC1274: RFC822 Mailbox')
   })
 
   /**
@@ -92,8 +87,7 @@ describe('RFC4512Parser - mail AttributeType LDIF', () => {
   it('should correctly extract the EQUALITY matching rule', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.equality).toBe('caseIgnoreIA5Match')
+    expect(result.equality).toBe('caseIgnoreIA5Match')
   })
 
   /**
@@ -104,8 +98,7 @@ describe('RFC4512Parser - mail AttributeType LDIF', () => {
   it('should correctly extract the SUBSTR matching rule', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.substr).toBe('caseIgnoreIA5SubstringsMatch')
+    expect(result.substr).toBe('caseIgnoreIA5SubstringsMatch')
   })
 
   /**
@@ -116,9 +109,8 @@ describe('RFC4512Parser - mail AttributeType LDIF', () => {
   it('should correctly extract the SYNTAX with length restriction', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.syntax?.oid).toBe('1.3.6.1.4.1.1466.115.121.1.26')
-    expect(result.data?.syntax?.length).toBe(256)
+    expect(result.syntax?.oid).toBe('1.3.6.1.4.1.1466.115.121.1.26')
+    expect(result.syntax?.length).toBe(256)
   })
 
   /**
@@ -129,8 +121,7 @@ describe('RFC4512Parser - mail AttributeType LDIF', () => {
   it('should detect the attributeType schema type', () => {
     const result = parser.parseSchema(ldifContent)
 
-    expect(result.success).toBe(true)
-    expect(result.data?.type).toBe('attributeType')
+    expect(result.type).toBe('attributeType')
   })
 
   /**
