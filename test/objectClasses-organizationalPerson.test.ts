@@ -1,18 +1,18 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import RFC4512Parser from '../src/rfc4512.parser'
+import { RFC4512Parser } from '../src'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
 /**
  * Test suite for RFC4512Parser - ObjectClasses LDIF parsing functionality
- * 
+ *
  * This test suite validates the parser's ability to correctly parse and extract
  * information from LDAP ObjectClass definitions in LDIF format, specifically
  * testing against the 'organizationalPerson' object class definition.
- * 
+ *
  * The organizationalPerson class (RFC2256) extends person with additional
  * organizational attributes for persons in organizations.
- * 
+ *
  * The tests cover:
  * - Basic parsing success validation
  * - OID extraction
@@ -45,7 +45,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should successfully parse the organizationalPerson objectClass LDIF file', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data).toBeDefined()
     expect(result.error).toBeUndefined()
@@ -58,7 +58,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should correctly extract the OID from the organizationalPerson objectClass', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.oid).toBe('2.5.6.7')
   })
@@ -70,7 +70,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should correctly extract the NAME from the organizationalPerson objectClass', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.name).toBe('organizationalPerson')
   })
@@ -82,7 +82,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should correctly extract the DESCRIPTION from the organizationalPerson objectClass', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.desc).toBe('RFC2256: an organizational person')
   })
@@ -94,7 +94,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should correctly extract the SUP (superior class)', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.sup).toBe('person')
   })
@@ -106,7 +106,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should correctly detect the objectClass type', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.type).toBe('objectClass')
   })
@@ -118,7 +118,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should correctly extract the STRUCTURAL objectClass type', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.objectClassType).toBe('STRUCTURAL')
   })
@@ -130,11 +130,11 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should correctly extract the MAY attributes', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.may).toBeDefined()
     expect(Array.isArray(result.data?.may)).toBe(true)
-    
+
     // Verify some key organizational attributes are present
     const mayAttributes = result.data?.may || []
     expect(mayAttributes).toContain('title')
@@ -147,7 +147,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
     expect(mayAttributes).toContain('facsimileTelephoneNumber')
     expect(mayAttributes).toContain('st')
     expect(mayAttributes).toContain('l')
-    
+
     // Verify the total number of MAY attributes (should be around 19)
     expect(mayAttributes.length).toBeGreaterThan(15)
     expect(mayAttributes.length).toBeLessThan(25)
@@ -160,7 +160,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should not have MUST attributes defined (inherits from superior)', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.must).toBeNull()
   })
@@ -172,7 +172,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should validate that the definition is syntactically correct', () => {
     const isValid = parser.isValidSchema(ldifContent)
-    
+
     expect(isValid).toBe(true)
   })
 
@@ -183,7 +183,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should use extractOID to get the OID directly', () => {
     const oid = parser.extractOID(ldifContent)
-    
+
     expect(oid).toBe('2.5.6.7')
   })
 
@@ -194,7 +194,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    */
   it('should use extractName to get the name directly', () => {
     const name = parser.extractName(ldifContent)
-    
+
     expect(name).toBe('organizationalPerson')
   })
 })

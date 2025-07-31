@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import RFC4512Parser from '../src/rfc4512.parser'
+import { RFC4512Parser } from '../src'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
 /**
  * Test suite for RFC4512Parser - AttributeTypes LDIF parsing functionality
- * 
+ *
  * This test suite validates the parser's ability to correctly parse and extract
  * information from LDAP AttributeType definitions in LDIF format, specifically
  * testing against the 'title' attribute type definition.
- * 
+ *
  * The tests cover:
  * - Basic parsing success validation
  * - OID extraction
@@ -40,7 +40,7 @@ describe('RFC4512Parser - title AttributeType LDIF', () => {
    */
   it('should successfully parse the title attributeType LDIF file', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data).toBeDefined()
     expect(result.error).toBeUndefined()
@@ -53,7 +53,7 @@ describe('RFC4512Parser - title AttributeType LDIF', () => {
    */
   it('should correctly extract the OID from the title attributeType', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.oid).toBe('2.5.4.12')
   })
@@ -65,7 +65,7 @@ describe('RFC4512Parser - title AttributeType LDIF', () => {
    */
   it('should correctly extract the NAME from the title attributeType', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.name).toBe('title')
   })
@@ -77,7 +77,7 @@ describe('RFC4512Parser - title AttributeType LDIF', () => {
    */
   it('should correctly extract the DESCRIPTION from the title attributeType', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.desc).toBe('RFC2256: title associated with the entity')
   })
@@ -89,7 +89,7 @@ describe('RFC4512Parser - title AttributeType LDIF', () => {
    */
   it('should correctly extract the SUP from the title attributeType', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.sup).toBe('name')
   })
@@ -101,7 +101,7 @@ describe('RFC4512Parser - title AttributeType LDIF', () => {
    */
   it('should detect the attributeType schema type', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.type).toBe('attributeType')
   })
@@ -113,7 +113,7 @@ describe('RFC4512Parser - title AttributeType LDIF', () => {
    */
   it('should validate that the definition is syntactically correct', () => {
     const isValid = parser.isValidSchema(ldifContent)
-    
+
     expect(isValid).toBe(true)
   })
 
@@ -124,7 +124,7 @@ describe('RFC4512Parser - title AttributeType LDIF', () => {
    */
   it('should use extractOID to get the OID directly', () => {
     const oid = parser.extractOID(ldifContent)
-    
+
     expect(oid).toBe('2.5.4.12')
   })
 
@@ -135,7 +135,7 @@ describe('RFC4512Parser - title AttributeType LDIF', () => {
    */
   it('should use extractName to get the name directly', () => {
     const name = parser.extractName(ldifContent)
-    
+
     expect(name).toBe('title')
   })
 })

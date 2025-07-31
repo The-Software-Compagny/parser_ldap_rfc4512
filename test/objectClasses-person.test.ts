@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import RFC4512Parser from '../src/rfc4512.parser'
+import { RFC4512Parser } from '../src'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
 /**
  * Test suite for RFC4512Parser - ObjectClasses LDIF parsing functionality
- * 
+ *
  * This test suite validates the parser's ability to correctly parse and extract
  * information from LDAP ObjectClass definitions in LDIF format, specifically
  * testing against the 'person' object class definition.
- * 
+ *
  * The tests cover:
  * - Basic parsing success validation
  * - OID extraction
@@ -45,7 +45,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
   it('should successfully parse the sample-olcObjectClasses.ldif file', () => {
     // Parse the schema definition
     const result = parser.parseSchema(ldifContent)
-    
+
     // Verify that parsing succeeded
     expect(result.success).toBe(true)
     expect(result.data).toBeDefined()
@@ -59,7 +59,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should correctly extract the OID from the person objectClass', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.oid).toBe('2.5.6.6')
   })
@@ -71,7 +71,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should correctly extract the NAME from the person objectClass', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.name).toBe('person')
   })
@@ -83,7 +83,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should correctly extract the DESCRIPTION from the person objectClass', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.desc).toBe('RFC2256: a person')
   })
@@ -95,7 +95,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should correctly extract the SUP (superior class)', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.sup).toBe('top')
   })
@@ -107,7 +107,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should correctly detect the objectClass type', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     expect(result.data?.type).toBe('objectClass')
   })
@@ -119,7 +119,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should correctly extract the STRUCTURAL objectClass type', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     // Verify it's an objectClass and cast to access objectClassType
     if (result.data?.type === 'objectClass') {
@@ -134,7 +134,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should correctly extract the MUST attributes', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     if (result.data?.type === 'objectClass') {
       expect(result.data.must).toEqual(['sn', 'cn'])
@@ -148,7 +148,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should correctly extract the MAY attributes', () => {
     const result = parser.parseSchema(ldifContent)
-    
+
     expect(result.success).toBe(true)
     if (result.data?.type === 'objectClass') {
       expect(result.data.may).toEqual(['userPassword', 'telephoneNumber'])
@@ -162,7 +162,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should validate that the definition is syntactically correct', () => {
     const isValid = parser.isValidSchema(ldifContent)
-    
+
     expect(isValid).toBe(true)
   })
 
@@ -173,7 +173,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should use extractOID to get the OID directly', () => {
     const oid = parser.extractOID(ldifContent)
-    
+
     expect(oid).toBe('2.5.6.6')
   })
 
@@ -184,7 +184,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should use extractName to get the name directly', () => {
     const name = parser.extractName(ldifContent)
-    
+
     expect(name).toBe('person')
   })
 
@@ -195,7 +195,7 @@ describe('RFC4512Parser - ObjectClasses LDIF', () => {
    */
   it('should parse multiple schemas with parseMultipleSchemas', () => {
     const results = parser.parseMultipleSchemas([ldifContent, ldifContent])
-    
+
     expect(results).toHaveLength(2)
     expect(results[0].success).toBe(true)
     expect(results[1].success).toBe(true)

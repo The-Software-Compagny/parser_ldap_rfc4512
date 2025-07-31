@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import RFC4512Parser from '../src/rfc4512.parser'
+import { RFC4512Parser, RFC4512ErrorType } from '../src'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
 /**
  * Test suite for RFC4512Parser - Malformed ObjectClass LDIF parsing functionality
- * 
+ *
  * This test suite validates the parser's error handling capabilities when encountering
  * malformed LDAP objectClass schema definitions. It tests against a deliberately broken LDIF file
  * that contains various formatting errors and syntax violations.
- * 
+ *
  * The _bad-person.ldif file contains:
  * - Inconsistent spacing and formatting
  * - Multi-line descriptions (invalid)
@@ -19,7 +19,7 @@ import { join } from 'path'
  * - Missing quotes on field values
  * - Malformed attribute list syntax
  * - General objectClass syntax violations
- * 
+ *
  * The tests cover:
  * - Parse failure detection
  * - Error message validation
@@ -47,11 +47,11 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
    */
   it('should fail to parse the malformed objectClass LDIF file', () => {
     const result = parser.parseSchema(badLdifContent)
-    
+
     expect(result.success).toBe(false)
     expect(result.data).toBeUndefined()
     expect(result.error).toBeDefined()
-    expect(result.error).toContain('Parse error:')
+    expect(result.error).toContain(RFC4512ErrorType.SYNTAX_ERROR)
   })
 
   /**
@@ -60,7 +60,7 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
    */
   it('should provide a meaningful error message for objectClass parsing failures', () => {
     const result = parser.parseSchema(badLdifContent)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
     expect(typeof result.error).toBe('string')
@@ -73,7 +73,7 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
    */
   it('should identify the malformed objectClass schema as invalid', () => {
     const isValid = parser.isValidSchema(badLdifContent)
-    
+
     expect(isValid).toBe(false)
   })
 
@@ -83,7 +83,7 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
    */
   it('should return null when extracting OID from malformed objectClass schema', () => {
     const oid = parser.extractOID(badLdifContent)
-    
+
     expect(oid).toBeNull()
   })
 
@@ -93,7 +93,7 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
    */
   it('should return null when extracting name from malformed objectClass schema', () => {
     const name = parser.extractName(badLdifContent)
-    
+
     expect(name).toBeNull()
   })
 
@@ -104,7 +104,7 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
   it('should fail on malformed objectClass MUST/MAY syntax', () => {
     const malformedMustMay = '( 2.5.6.6 NAME \'test\' SUP top STRUCTURAL MUST ( cn $ INVALID )'
     const result = parser.parseSchema(malformedMustMay)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
   })
@@ -116,10 +116,10 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
   it('should fail when objectClass type is missing', () => {
     const missingType = '( 2.5.6.6 NAME \'test\' SUP top MUST cn )'
     const result = parser.parseSchema(missingType)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
-    expect(result.error).toContain('ObjectClass must specify exactly one type: STRUCTURAL, AUXILIARY, or ABSTRACT (RFC 4512 Section 4.1.1)')
+    expect(result.error).toContain('ObjectClass must specify exactly one type')
   })
 
   /**
@@ -129,7 +129,7 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
   it('should fail on invalid SUP reference syntax', () => {
     const invalidSup = '( 2.5.6.6 NAME \'test\' SUP STRUCTURAL MUST cn )'
     const result = parser.parseSchema(invalidSup)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
   })
@@ -141,7 +141,7 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
   it('should fail on incomplete MUST/MAY attribute lists', () => {
     const incompleteList = '( 2.5.6.6 NAME \'test\' SUP top STRUCTURAL MUST ( cn $'
     const result = parser.parseSchema(incompleteList)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
   })
@@ -157,7 +157,7 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
       '( NAME \'test\' SUP top STRUCTURAL )', // Missing OID
       '()', // Empty parentheses
     ]
-    
+
     malformedInputs.forEach((input, index) => {
       const result = parser.parseSchema(input)
       expect(result.success).toBe(false)
@@ -172,7 +172,7 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
   it('should fail on objectClass with conflicting types', () => {
     const conflictingTypes = '( 2.5.6.6 NAME \'test\' SUP top STRUCTURAL AUXILIARY )'
     const result = parser.parseSchema(conflictingTypes)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
   })
@@ -184,7 +184,7 @@ describe('RFC4512Parser - Malformed ObjectClass LDIF Error Handling', () => {
   it('should fail on empty or malformed MUST/MAY lists', () => {
     const emptyMust = '( 2.5.6.6 NAME \'test\' SUP top STRUCTURAL MUST () )'
     const result = parser.parseSchema(emptyMust)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
   })

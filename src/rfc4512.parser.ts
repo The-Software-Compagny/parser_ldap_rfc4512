@@ -2,6 +2,7 @@ import { generate, type Parser, type ParserBuildOptions } from 'peggy'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import type { ParseResultInterface } from './interfaces'
+import { RFC4512ParserError, RFC4512ErrorType } from './interfaces'
 import type { LDAPSchemaType } from './types'
 
 /**
@@ -30,7 +31,7 @@ import type { LDAPSchemaType } from './types'
  * }
  * ```
  */
-export default class RFC4512Parser {
+export class RFC4512Parser {
   private readonly _parser: Parser
 
   /**
@@ -42,7 +43,12 @@ export default class RFC4512Parser {
       const grammar = readFileSync(grammarPath, 'utf-8')
       this._parser = generate(grammar, options)
     } catch (error) {
-      throw new Error(`Error loading grammar: ${error}`)
+      throw new RFC4512ParserError(
+        `Error loading grammar: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        RFC4512ErrorType.GRAMMAR_LOAD_ERROR,
+        '',
+        { cause: error instanceof Error ? error : undefined }
+      )
     }
   }
 
@@ -51,17 +57,43 @@ export default class RFC4512Parser {
    *
    * @param schemaDefinition - The schema definition to parse
    * @returns Parse result with data or error
+   * @throws {RFC4512ParserError} When parsing fails with detailed error information
    */
   public parseSchema(schemaDefinition: string): ParseResultInterface {
+    try {
+      return this.parseSchemaStrict(schemaDefinition)
+    } catch (error) {
+      if (error instanceof RFC4512ParserError) {
+        return {
+          success: false,
+          error: error.getDetailedMessage()
+        }
+      }
+      return {
+        success: false,
+        error: `Parse error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      }
+    }
+  }
+
+  /**
+   * Parse an LDAP schema definition with strict error handling (throws exceptions)
+   *
+   * @param schemaDefinition - The schema definition to parse
+   * @returns Parsed schema data
+   * @throws {RFC4512ParserError} When parsing fails with detailed error information
+   */
+  public parseSchemaStrict(schemaDefinition: string): ParseResultInterface {
     try {
       // Clean input by removing extra whitespace
       const cleanInput = schemaDefinition.trim()
 
       if (!cleanInput) {
-        return {
-          success: false,
-          error: 'Schema definition cannot be empty'
-        };
+        throw new RFC4512ParserError(
+          'Schema definition cannot be empty',
+          RFC4512ErrorType.EMPTY_INPUT,
+          schemaDefinition
+        )
       }
 
       // Parse with PEG.js grammar
@@ -69,17 +101,21 @@ export default class RFC4512Parser {
 
       // Basic validation of parsed data
       if (!parsed.oid) {
-        return {
-          success: false,
-          error: 'Missing OID in schema definition'
-        }
+        throw new RFC4512ParserError(
+          'Missing OID in schema definition',
+          RFC4512ErrorType.MISSING_FIELD,
+          schemaDefinition,
+          { context: 'OID field is required for all LDAP schema definitions' }
+        )
       }
 
       if (!parsed.name) {
-        return {
-          success: false,
-          error: 'Missing NAME in schema definition'
-        }
+        throw new RFC4512ParserError(
+          'Missing NAME in schema definition',
+          RFC4512ErrorType.MISSING_FIELD,
+          schemaDefinition,
+          { context: 'NAME field is required for all LDAP schema definitions' }
+        )
       }
 
       // Additional validation for objectClasses
@@ -92,19 +128,23 @@ export default class RFC4512Parser {
           objectClass.objectClassType === 'ABSTRACT'
 
         if (!hasValidType) {
-          return {
-            success: false,
-            error: 'ObjectClass must specify exactly one type: STRUCTURAL, AUXILIARY, or ABSTRACT (RFC 4512 Section 4.1.1)'
-          }
+          throw new RFC4512ParserError(
+            'ObjectClass must specify exactly one type: STRUCTURAL, AUXILIARY, or ABSTRACT',
+            RFC4512ErrorType.OBJECTCLASS_ERROR,
+            schemaDefinition,
+            { context: 'RFC 4512 Section 4.1.1 - ObjectClass type validation' }
+          )
         }
 
         // RFC 4512: Validate OID format (dotted decimal notation)
         const oidPattern = /^[0-9]+(\.[0-9]+)*$/
         if (!oidPattern.test(objectClass.oid)) {
-          return {
-            success: false,
-            error: `Invalid OID format: ${objectClass.oid}. Must follow dotted decimal notation (RFC 4512)`
-          }
+          throw new RFC4512ParserError(
+            `Invalid OID format: ${objectClass.oid}. Must follow dotted decimal notation`,
+            RFC4512ErrorType.INVALID_OID,
+            schemaDefinition,
+            { context: 'RFC 4512 - OID must use dotted decimal notation (e.g., 2.5.6.6)' }
+          )
         }
 
         // RFC 4512: Validate SUP field constraints
@@ -112,19 +152,23 @@ export default class RFC4512Parser {
           // SUP should not be an objectClass type keyword
           const reservedKeywords = ['STRUCTURAL', 'AUXILIARY', 'ABSTRACT', 'MUST', 'MAY', 'DESC', 'NAME', 'OBSOLETE']
           if (reservedKeywords.includes(objectClass.sup.toUpperCase())) {
-            return {
-              success: false,
-              error: `Invalid SUP value: ${objectClass.sup}. SUP should reference a parent objectClass name, not a reserved keyword (RFC 4512)`
-            }
+            throw new RFC4512ParserError(
+              `Invalid SUP value: ${objectClass.sup}. SUP should reference a parent objectClass name, not a reserved keyword`,
+              RFC4512ErrorType.INVALID_FIELD,
+              schemaDefinition,
+              { context: 'RFC 4512 - SUP must reference a valid parent objectClass' }
+            )
           }
 
           // SUP should not be empty or contain invalid characters
           const supPattern = /^[a-zA-Z][a-zA-Z0-9_-]*$/
           if (!supPattern.test(objectClass.sup)) {
-            return {
-              success: false,
-              error: `Invalid SUP format: ${objectClass.sup}. Must be a valid objectClass name (RFC 4512)`
-            }
+            throw new RFC4512ParserError(
+              `Invalid SUP format: ${objectClass.sup}. Must be a valid objectClass name`,
+              RFC4512ErrorType.INVALID_FIELD,
+              schemaDefinition,
+              { context: 'RFC 4512 - SUP must follow objectClass naming conventions' }
+            )
           }
         }
 
@@ -135,10 +179,12 @@ export default class RFC4512Parser {
           const overlap = [...mustSet].filter(attr => maySet.has(attr))
 
           if (overlap.length > 0) {
-            return {
-              success: false,
-              error: `Attributes cannot appear in both MUST and MAY: ${overlap.join(', ')} (RFC 4512 Section 4.1.1)`
-            }
+            throw new RFC4512ParserError(
+              `Attributes cannot appear in both MUST and MAY: ${overlap.join(', ')}`,
+              RFC4512ErrorType.VALIDATION_ERROR,
+              schemaDefinition,
+              { context: 'RFC 4512 Section 4.1.1 - MUST and MAY attributes must be mutually exclusive' }
+            )
           }
         }
 
@@ -147,24 +193,22 @@ export default class RFC4512Parser {
         const validateAttributeNames = (attributes: string[], listType: string) => {
           for (const attr of attributes) {
             if (!attributeNamePattern.test(attr)) {
-              return `Invalid attribute name in ${listType}: ${attr}. Must follow RFC 4512 naming conventions`
+              throw new RFC4512ParserError(
+                `Invalid attribute name in ${listType}: ${attr}. Must follow RFC 4512 naming conventions`,
+                RFC4512ErrorType.INVALID_NAME,
+                schemaDefinition,
+                { context: `${listType} attribute names must start with a letter and contain only letters, numbers, hyphens, and underscores` }
+              )
             }
           }
-          return null
         }
 
         if (objectClass.must) {
-          const mustError = validateAttributeNames(objectClass.must, 'MUST')
-          if (mustError) {
-            return { success: false, error: mustError }
-          }
+          validateAttributeNames(objectClass.must, 'MUST')
         }
 
         if (objectClass.may) {
-          const mayError = validateAttributeNames(objectClass.may, 'MAY')
-          if (mayError) {
-            return { success: false, error: mayError }
-          }
+          validateAttributeNames(objectClass.may, 'MAY')
         }
 
         // Generic validation for unknown/invalid fields
@@ -174,10 +218,12 @@ export default class RFC4512Parser {
 
         for (const key of Object.keys(objectClass)) {
           if (!validObjectClassFields.includes(key)) {
-            return {
-              success: false,
-              error: `Invalid field in objectClass definition: ${key}. Check RFC 4512 specification for valid fields`
-            }
+            throw new RFC4512ParserError(
+              `Invalid field in objectClass definition: ${key}. Check RFC 4512 specification for valid fields`,
+              RFC4512ErrorType.INVALID_FIELD,
+              schemaDefinition,
+              { context: `Valid objectClass fields are: ${validObjectClassFields.join(', ')}` }
+            )
           }
         }
       }
@@ -189,29 +235,35 @@ export default class RFC4512Parser {
         // RFC 4512: Validate OID format
         const oidPattern = /^[0-9]+(\.[0-9]+)*$/
         if (!oidPattern.test(attributeType.oid)) {
-          return {
-            success: false,
-            error: `Invalid OID format: ${attributeType.oid}. Must follow dotted decimal notation (RFC 4512)`
-          }
+          throw new RFC4512ParserError(
+            `Invalid OID format: ${attributeType.oid}. Must follow dotted decimal notation`,
+            RFC4512ErrorType.INVALID_OID,
+            schemaDefinition,
+            { context: 'RFC 4512 - OID must use dotted decimal notation (e.g., 2.5.4.3)' }
+          )
         }
 
         // RFC 4512: Validate SUP field for attributeTypes
         if (attributeType.sup && typeof attributeType.sup === 'string') {
           const reservedKeywords = ['EQUALITY', 'ORDERING', 'SUBSTR', 'SYNTAX', 'SINGLE-VALUE', 'COLLECTIVE', 'NO-USER-MODIFICATION', 'USAGE']
           if (reservedKeywords.includes(attributeType.sup.toUpperCase())) {
-            return {
-              success: false,
-              error: `Invalid SUP value: ${attributeType.sup}. SUP should reference a parent attributeType name, not a reserved keyword (RFC 4512)`
-            }
+            throw new RFC4512ParserError(
+              `Invalid SUP value: ${attributeType.sup}. SUP should reference a parent attributeType name, not a reserved keyword`,
+              RFC4512ErrorType.INVALID_FIELD,
+              schemaDefinition,
+              { context: 'RFC 4512 - SUP must reference a valid parent attributeType' }
+            )
           }
         }
 
         // RFC 4512: If no SUP, SYNTAX is required
         if (!attributeType.sup && !attributeType.syntax) {
-          return {
-            success: false,
-            error: 'AttributeType must have either SUP (superior type) or SYNTAX defined (RFC 4512 Section 4.1.2)'
-          }
+          throw new RFC4512ParserError(
+            'AttributeType must have either SUP (superior type) or SYNTAX defined',
+            RFC4512ErrorType.ATTRIBUTETYPE_ERROR,
+            schemaDefinition,
+            { context: 'RFC 4512 Section 4.1.2 - AttributeType must inherit from superior or define syntax' }
+          )
         }
 
         // Generic validation for unknown/invalid fields
@@ -222,10 +274,12 @@ export default class RFC4512Parser {
 
         for (const key of Object.keys(attributeType)) {
           if (!validAttributeTypeFields.includes(key)) {
-            return {
-              success: false,
-              error: `Invalid field in attributeType definition: ${key}. Check RFC 4512 specification for valid fields`
-            }
+            throw new RFC4512ParserError(
+              `Invalid field in attributeType definition: ${key}. Check RFC 4512 specification for valid fields`,
+              RFC4512ErrorType.INVALID_FIELD,
+              schemaDefinition,
+              { context: `Valid attributeType fields are: ${validAttributeTypeFields.join(', ')}` }
+            )
           }
         }
       }
@@ -236,10 +290,26 @@ export default class RFC4512Parser {
       }
 
     } catch (error) {
-      return {
-        success: false,
-        error: `Parse error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      // If it's already an RFC4512ParserError, re-throw it
+      if (error instanceof RFC4512ParserError) {
+        throw error
       }
+
+      // For PEG.js parsing errors, extract position information if available
+      const pegError = error as any
+      const position = pegError.location ? {
+        line: pegError.location.start.line,
+        column: pegError.location.start.column,
+        offset: pegError.location.start.offset
+      } : undefined
+
+      // Create a new RFC4512ParserError for grammar/syntax errors
+      throw RFC4512ParserError.fromError(
+        error instanceof Error ? error : new Error(String(error)),
+        pegError.location ? RFC4512ErrorType.SYNTAX_ERROR : RFC4512ErrorType.UNKNOWN_ERROR,
+        schemaDefinition,
+        { position }
+      )
     }
   }
 
@@ -286,3 +356,5 @@ export default class RFC4512Parser {
     return result.success ? result.data!.name : null;
   }
 }
+
+export default RFC4512Parser

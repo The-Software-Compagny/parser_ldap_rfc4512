@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import RFC4512Parser from '../src/rfc4512.parser'
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import { RFC4512Parser, RFC4512ErrorType } from '../src'
 
 /**
  * Test suite for RFC4512Parser - Malformed LDIF parsing functionality
- * 
+ *
  * This test suite validates the parser's error handling capabilities when encountering
  * malformed LDAP schema definitions. It tests against a deliberately broken LDIF file
  * that contains various formatting errors and syntax violations.
- * 
+ *
  * The _bad-cn.ldif file contains:
  * - Inconsistent spacing and formatting
  * - Multi-line descriptions (invalid)
@@ -17,7 +17,7 @@ import { join } from 'path'
  * - Invalid/unknown fields
  * - Missing quotes on field values
  * - General syntax violations
- * 
+ *
  * The tests cover:
  * - Parse failure detection
  * - Error message validation
@@ -45,11 +45,11 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    */
   it('should fail to parse the malformed LDIF file', () => {
     const result = parser.parseSchema(badLdifContent)
-    
+
     expect(result.success).toBe(false)
     expect(result.data).toBeUndefined()
     expect(result.error).toBeDefined()
-    expect(result.error).toContain('Parse error:')
+    expect(result.error).toContain(RFC4512ErrorType.SYNTAX_ERROR)
   })
 
   /**
@@ -58,7 +58,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    */
   it('should provide a meaningful error message for parsing failures', () => {
     const result = parser.parseSchema(badLdifContent)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
     expect(typeof result.error).toBe('string')
@@ -71,7 +71,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    */
   it('should identify the malformed schema as invalid', () => {
     const isValid = parser.isValidSchema(badLdifContent)
-    
+
     expect(isValid).toBe(false)
   })
 
@@ -81,7 +81,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    */
   it('should return null when extracting OID from malformed schema', () => {
     const oid = parser.extractOID(badLdifContent)
-    
+
     expect(oid).toBeNull()
   })
 
@@ -91,7 +91,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    */
   it('should return null when extracting name from malformed schema', () => {
     const name = parser.extractName(badLdifContent)
-    
+
     expect(name).toBeNull()
   })
 
@@ -101,9 +101,9 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    */
   it('should handle empty schema definition gracefully', () => {
     const result = parser.parseSchema('')
-    
+
     expect(result.success).toBe(false)
-    expect(result.error).toBe('Schema definition cannot be empty')
+    expect(result.error).toContain('Schema definition cannot be empty')
   })
 
   /**
@@ -112,9 +112,9 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
    */
   it('should handle whitespace-only schema definition gracefully', () => {
     const result = parser.parseSchema('   \n\t  \r\n  ')
-    
+
     expect(result.success).toBe(false)
-    expect(result.error).toBe('Schema definition cannot be empty')
+    expect(result.error).toContain('Schema definition cannot be empty')
   })
 
   /**
@@ -124,10 +124,10 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
   it('should fail on incomplete schema definitions', () => {
     const incompleteSchema = '( 2.5.4.3 NAME'
     const result = parser.parseSchema(incompleteSchema)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
-    expect(result.error).toContain('Parse error:')
+    expect(result.error).toContain(RFC4512ErrorType.SYNTAX_ERROR)
   })
 
   /**
@@ -137,7 +137,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
   it('should fail on invalid OID format', () => {
     const invalidOidSchema = '( abc.def NAME \'test\' )'
     const result = parser.parseSchema(invalidOidSchema)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
   })
@@ -150,7 +150,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
     // Schema with OID but no NAME
     const missingNameSchema = '( 2.5.4.3 DESC \'test description\' )'
     const result = parser.parseSchema(missingNameSchema)
-    
+
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
   })
@@ -167,7 +167,7 @@ describe('RFC4512Parser - Malformed LDIF Error Handling', () => {
       '( NAME \'test\' )', // Missing OID
       '()', // Empty parentheses
     ]
-    
+
     malformedInputs.forEach((input, index) => {
       const result = parser.parseSchema(input)
       expect(result.success).toBe(false)

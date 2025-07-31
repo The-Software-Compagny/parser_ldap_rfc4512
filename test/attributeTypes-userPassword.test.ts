@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import RFC4512Parser from '../src/rfc4512.parser'
+import { RFC4512Parser } from '../src'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
