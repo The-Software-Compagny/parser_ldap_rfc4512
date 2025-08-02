@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { RFC4512Parser, RFC4512ErrorType } from '../src'
+import { RFC4512Parser } from '../src'
 
 /**
  * Test suite for RFC4512Parser - Malformed LDIF parsing functionality

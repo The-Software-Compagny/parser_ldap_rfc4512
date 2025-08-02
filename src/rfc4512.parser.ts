@@ -58,7 +58,7 @@ export class RFC4512Parser {
    * @returns Parsed schema data
    * @throws {RFC4512ParserError} When parsing fails with detailed error information
    */
-  public parseSchema(schemaDefinition: string): LDAPSchemaType {
+  public parseSchema<T extends LDAPSchemaType>(schemaDefinition: string): T {
     try {
       // Clean input by removing extra whitespace
       const cleanInput = schemaDefinition.trim()
@@ -72,7 +72,7 @@ export class RFC4512Parser {
       }
 
       // Parse with PEG.js grammar
-      const parsed: LDAPSchemaType = this._parser.parse(cleanInput)
+      const parsed: T = this._parser.parse(cleanInput)
 
       // Basic validation of parsed data
       if (!parsed.oid) {

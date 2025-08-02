@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import { RFC4512Parser } from '../src'
+import { LDAPAttributeTypeInterface, RFC4512Parser } from '../src'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -43,8 +43,8 @@ describe('RFC4512Parser - telephoneNumber AttributeType LDIF', () => {
   it('should successfully parse the telephoneNumber attributeType LDIF file', () => {
     const result = parser.parseSchema(ldifContent)
 
-        expect(result).toBeDefined()
-    })
+    expect(result).toBeDefined()
+  })
 
   /**
    * Test: OID extraction
@@ -85,7 +85,7 @@ describe('RFC4512Parser - telephoneNumber AttributeType LDIF', () => {
    * from the telephoneNumber attributeType definition
    */
   it('should correctly extract the EQUALITY matching rule', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPAttributeTypeInterface>(ldifContent)
 
     expect(result.equality).toBe('telephoneNumberMatch')
   })
@@ -96,7 +96,7 @@ describe('RFC4512Parser - telephoneNumber AttributeType LDIF', () => {
    * from the telephoneNumber attributeType definition
    */
   it('should correctly extract the SUBSTR matching rule', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPAttributeTypeInterface>(ldifContent)
 
     expect(result.substr).toBe('telephoneNumberSubstringsMatch')
   })
@@ -107,7 +107,7 @@ describe('RFC4512Parser - telephoneNumber AttributeType LDIF', () => {
    * from the telephoneNumber attributeType definition
    */
   it('should correctly extract the SYNTAX with length restriction', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPAttributeTypeInterface>(ldifContent)
 
     expect(result.syntax?.oid).toBe('1.3.6.1.4.1.1466.115.121.1.50')
     expect(result.syntax?.length).toBe(32)

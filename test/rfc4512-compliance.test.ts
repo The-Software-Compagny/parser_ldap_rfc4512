@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import { RFC4512Parser } from '../src'
+import { LDAPAttributeTypeInterface, RFC4512Parser } from '../src'
 
 /**
  * Test suite for RFC4512Parser - Enhanced RFC 4512 Compliance Validation
@@ -160,7 +160,7 @@ describe('RFC4512Parser - Enhanced RFC 4512 Compliance', () => {
 
     it('should accept valid attributeType with SYNTAX', () => {
       const validWithSyntax = '( 1.2.3 NAME \'test\' SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )'
-      const result = parser.parseSchema(validWithSyntax)
+      const result = parser.parseSchema<LDAPAttributeTypeInterface>(validWithSyntax)
 
       expect(result.type).toBe('attributeType')
       expect(result.oid).toBe('1.2.3')

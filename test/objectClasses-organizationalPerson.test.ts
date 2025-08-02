@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import { RFC4512Parser } from '../src'
+import { LDAPObjectClassInterface, RFC4512Parser } from '../src'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -46,8 +46,8 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
   it('should successfully parse the organizationalPerson objectClass LDIF file', () => {
     const result = parser.parseSchema(ldifContent)
 
-        expect(result).toBeDefined()
-    })
+    expect(result).toBeDefined()
+  })
 
   /**
    * Test: OID extraction
@@ -110,7 +110,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    * as STRUCTURAL type
    */
   it('should correctly extract the STRUCTURAL objectClass type', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPObjectClassInterface>(ldifContent)
 
     expect(result.objectClassType).toBe('STRUCTURAL')
   })
@@ -121,7 +121,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    * organizationalPerson has organizational-specific MAY attributes
    */
   it('should correctly extract the MAY attributes', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPObjectClassInterface>(ldifContent)
 
     expect(result.may).toBeDefined()
     expect(Array.isArray(result.may)).toBe(true)
@@ -150,7 +150,7 @@ describe('RFC4512Parser - organizationalPerson ObjectClass LDIF', () => {
    * (inherits from person which has MUST ( sn $ cn ))
    */
   it('should not have MUST attributes defined (inherits from superior)', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPObjectClassInterface>(ldifContent)
 
     expect(result.must).toBeNull()
   })

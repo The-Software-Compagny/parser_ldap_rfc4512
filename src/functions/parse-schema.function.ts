@@ -10,7 +10,10 @@ import type { LDAPSchemaType } from '../types'
  * @returns Parsed schema data
  * @throws {RFC4512ParserError} When parsing fails with detailed error information
  */
-export function parseSchema(schemaDefinition: string, options?: ParserBuildOptions): LDAPSchemaType {
+export function parseSchema<T extends LDAPSchemaType>(
+  schemaDefinition: string,
+  options?: ParserBuildOptions,
+): T {
   const parser = new RFC4512Parser(options)
   return parser.parseSchema(schemaDefinition)
 }

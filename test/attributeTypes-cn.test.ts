@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import { RFC4512Parser } from '../src'
+import { LDAPAttributeTypeInterface, RFC4512Parser } from '../src'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -45,8 +45,8 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
     const result = parser.parseSchema(ldifContent)
 
     // Verify that parsing succeeded
-        expect(result).toBeDefined()
-    })
+    expect(result).toBeDefined()
+  })
 
   /**
    * Test: OID extraction
@@ -87,7 +87,7 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
    * from the cn attributeType definition
    */
   it('should correctly extract the EQUALITY matching rule', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPAttributeTypeInterface>(ldifContent)
 
     expect(result.equality).toBe('caseIgnoreMatch')
   })
@@ -98,7 +98,7 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
    * from the cn attributeType definition
    */
   it('should correctly extract the SYNTAX', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPAttributeTypeInterface>(ldifContent)
 
     expect(result.syntax?.oid).toBe('1.3.6.1.4.1.1466.115.121.1.15')
   })
@@ -109,7 +109,7 @@ describe('RFC4512Parser - AttributeTypes LDIF', () => {
    * in the cn attributeType definition
    */
   it('should correctly detect SINGLE-VALUE', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPAttributeTypeInterface>(ldifContent)
 
     expect(result.singleValue).toBe(true)
   })

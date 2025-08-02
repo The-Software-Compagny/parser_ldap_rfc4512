@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import { RFC4512Parser } from '../src'
+import { LDAPAttributeTypeInterface, RFC4512Parser } from '../src'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -45,8 +45,8 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
     const result = parser.parseSchema(ldifContent)
 
     // Verify that parsing succeeded
-        expect(result).toBeDefined()
-    })
+    expect(result).toBeDefined()
+  })
 
   /**
    * Test: OID extraction
@@ -87,7 +87,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
    * from the userPassword attributeType definition
    */
   it('should correctly extract the EQUALITY matching rule', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPAttributeTypeInterface>(ldifContent)
 
     expect(result.equality).toBe('octetStringMatch')
   })
@@ -98,7 +98,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
    * from the userPassword attributeType definition
    */
   it('should correctly extract the SYNTAX', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPAttributeTypeInterface>(ldifContent)
 
     expect(result.syntax?.oid).toBe('1.3.6.1.4.1.1466.115.121.1.40')
   })
@@ -109,7 +109,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
    * from the userPassword attributeType definition
    */
   it('should correctly extract the SYNTAX length limitation', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPAttributeTypeInterface>(ldifContent)
 
     expect(result.syntax?.length).toBe(128)
   })
@@ -120,7 +120,7 @@ describe('RFC4512Parser - AttributeTypes LDIF - userPassword', () => {
    * (multi-value is allowed for password attributes by default)
    */
   it('should correctly detect that userPassword does not specify SINGLE-VALUE', () => {
-    const result = parser.parseSchema(ldifContent)
+    const result = parser.parseSchema<LDAPAttributeTypeInterface>(ldifContent)
 
     expect(result.singleValue).toBe(false)
   })

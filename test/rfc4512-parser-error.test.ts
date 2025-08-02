@@ -1,6 +1,5 @@
 import { describe, test, beforeEach, expect } from 'bun:test'
-import { RFC4512Parser } from '../src'
-import { RFC4512ParserError, RFC4512ErrorType } from '../src/interfaces'
+import { RFC4512Parser, RFC4512ParserError, RFC4512ErrorType } from '../src'
 
 /**
  * Test suite for RFC4512ParserError - Error Handling and Custom Exception Testing
