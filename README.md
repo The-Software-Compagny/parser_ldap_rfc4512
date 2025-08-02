@@ -1,5 +1,9 @@
 # RFC 4512 LDAP Schema Parser
 
+[![CI](https://github.com/The-Software-Compagny/parser_ldap_rfc4512/actions/workflows/ci.yml/badge.svg)](https://github.com/The-Software-Compagny/parser_ldap_rfc4512/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/The-Software-Compagny/parser_ldap_rfc4512/branch/main/graph/badge.svg)](https://codecov.io/gh/The-Software-Compagny/parser_ldap_rfc4512)
+[![npm version](https://badge.fury.io/js/@the-software-compagny%2Fparser_ldap_rfc4512.svg)](https://badge.fury.io/js/@the-software-compagny%2Fparser_ldap_rfc4512)
+
 A TypeScript parser for LDAP schema definitions based on RFC 4512, using PEG.js grammar.
 
 ## Overview

@@ -26,7 +26,7 @@
     "postbuild": "cpr README.md dist/README.md && cpr LICENSE dist/LICENSE && cpr package.json dist/package.json",
     "test": "bun test",
     "test:watch": "bun test --watch",
-    "test:cli": "./test-cli.sh",
+    "test:cli": "bun test test/cli.test.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\""
   },
