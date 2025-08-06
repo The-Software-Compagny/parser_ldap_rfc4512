@@ -9,6 +9,7 @@ import type { LDAPSchemaType } from './types'
  *
  * This class uses a PEG.js grammar to parse LDAP schema definitions
  * for object classes and attribute types according to RFC 4512.
+ * It also supports OpenLDAP cn=config format with optional index prefixes.
  *
  * @example
  * ```typescript
@@ -52,16 +53,39 @@ export class RFC4512Parser {
   }
 
   /**
+   * Remove OpenLDAP cn=config index prefixes from schema definitions
+   *
+   * This method handles index prefixes like {0}, {57}, etc. that are used
+   * in OpenLDAP's cn=config format to maintain ordering of multi-valued
+   * attributes like olcAttributeTypes and olcObjectClasses.
+   *
+   * @private
+   * @param schemaDefinition - The raw schema definition that may contain OpenLDAP prefixes
+   * @returns Cleaned schema definition without OpenLDAP prefixes
+   *
+   * @example
+   * Input: "{57}( 1.3.6.1.4.1.7165.2.1.80 NAME 'test' ... )"
+   * Output: "( 1.3.6.1.4.1.7165.2.1.80 NAME 'test' ... )"
+   */
+  private removeOpenLDAPPrefix(schemaDefinition: string): string {
+    // Pattern to match OpenLDAP index prefix: {number} at the start of the definition
+    // The pattern allows for optional whitespace before and after the prefix
+    const openLdapPrefixPattern = /^\s*\{\d+\}\s*/
+
+    return schemaDefinition.replace(openLdapPrefixPattern, '').trim()
+  }
+
+  /**
    * Parse an LDAP schema definition
    *
-   * @param schemaDefinition - The schema definition to parse
+   * @param schemaDefinition - The schema definition to parse (supports both RFC 4512 format and OpenLDAP cn=config format with index prefixes)
    * @returns Parsed schema data
    * @throws {RFC4512ParserError} When parsing fails with detailed error information
    */
   public parseSchema<T extends LDAPSchemaType>(schemaDefinition: string): T {
     try {
-      // Clean input by removing extra whitespace
-      const cleanInput = schemaDefinition.trim()
+      // Clean input by removing OpenLDAP prefixes and extra whitespace
+      const cleanInput = this.removeOpenLDAPPrefix(schemaDefinition).trim()
 
       if (!cleanInput) {
         throw new RFC4512ParserError(
@@ -188,7 +212,7 @@ export class RFC4512Parser {
 
         // Generic validation for unknown/invalid fields
         const validObjectClassFields = [
-          'type', 'oid', 'name', 'desc', 'sup', 'objectClassType', 'must', 'may'
+          'type', 'oid', 'name', 'desc', 'sup', 'objectClassType', 'must', 'may', 'extensions'
         ]
 
         for (const key of Object.keys(objectClass)) {
@@ -244,7 +268,7 @@ export class RFC4512Parser {
         // Generic validation for unknown/invalid fields
         const validAttributeTypeFields = [
           'type', 'oid', 'name', 'desc', 'sup', 'equality', 'ordering', 'substr',
-          'syntax', 'singleValue', 'collective', 'noUserModification', 'usage'
+          'syntax', 'singleValue', 'collective', 'noUserModification', 'usage', 'extensions'
         ]
 
         for (const key of Object.keys(attributeType)) {

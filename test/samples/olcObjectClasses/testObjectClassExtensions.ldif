@@ -1,0 +1,1 @@
+{15}( 1.3.6.1.4.1.29426.2.6.1 NAME 'testObjectClassWithExtensions' DESC 'Test object class with X-* extensions' SUP top STRUCTURAL MUST cn MAY description X-ORIGIN 'Test Organization' X-SCHEMA-FILE '99test.ldif' )

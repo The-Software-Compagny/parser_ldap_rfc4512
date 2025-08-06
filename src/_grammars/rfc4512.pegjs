@@ -13,7 +13,8 @@ start
 // ObjectClass definition
 // Format: ( <oid> NAME <name> DESC <desc> SUP <sup> STRUCTURAL|AUXILIARY|ABSTRACT MUST <attrs> MAY <attrs> )
 objectClassDefinition
-  = _ "(" _ oid:oid _ name:name _ desc:desc? _ sup:sup? _ kind:kind? _ must:must? _ may:may? _ ")" _ {
+  = _ "(" _ oid:oid _ name:name _ desc:desc? _ sup:sup? _ kind:kind? _ must:must? _ may:may? _ extensions:extension* _ ")" _ {
+    const extensionsObj = extensions.length > 0 ? Object.fromEntries(extensions) : undefined;
     return {
       type: 'objectClass',
       oid,
@@ -22,14 +23,16 @@ objectClassDefinition
       sup,
       objectClassType: kind,
       must,
-      may
+      may,
+      extensions: extensionsObj
     };
   }
 
 // AttributeType definition
 // Format: ( <oid> NAME <name> DESC <desc> EQUALITY <equality> SYNTAX <syntax> SINGLE-VALUE? )
 attributeTypeDefinition
-  = _ "(" _ oid:oid _ name:name _ desc:desc? _ sup:attributeSup? _ equality:equality? _ ordering:ordering? _ substr:substr? _ syntax:syntax? _ singleValue:singleValue? _ collective:collective? _ noUserModification:noUserModification? _ usage:usage? _ ")" _ {
+  = _ "(" _ oid:oid _ name:name _ desc:desc? _ sup:attributeSup? _ equality:equality? _ ordering:ordering? _ substr:substr? _ syntax:syntax? _ singleValue:singleValue? _ collective:collective? _ noUserModification:noUserModification? _ usage:usage? _ extensions:extension* _ ")" _ {
+    const extensionsObj = extensions.length > 0 ? Object.fromEntries(extensions) : undefined;
     return {
       type: 'attributeType',
       oid,
@@ -43,7 +46,8 @@ attributeTypeDefinition
       singleValue: singleValue !== null && singleValue !== undefined ? singleValue : false,
       collective,
       noUserModification,
-      usage
+      usage,
+      extensions: extensionsObj
     };
   }
 
@@ -166,6 +170,19 @@ multiQuotedStrings
 // Used for attribute names, object class names, etc.
 word
   = chars:[a-zA-Z0-9_-]+ { return chars.join(""); }
+
+// X-* extension support
+// Format: X-EXTENSION-NAME 'value' or X-EXTENSION-NAME value
+extension
+  = _ key:extensionKey _ value:extensionValue { return [key, value]; }
+
+// Extension key must start with X- followed by alphanumeric and hyphens
+extensionKey
+  = "X-" chars:[A-Z0-9-]+ { return "X-" + chars.join(""); }
+
+// Extension value can be quoted string or simple word
+extensionValue
+  = quotedString / word
 
 // Whitespace - spaces, tabs, carriage returns, and newlines
 _ "whitespace"

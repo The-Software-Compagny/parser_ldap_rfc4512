@@ -15,6 +15,7 @@ This project provides a comprehensive parser for LDAP (Lightweight Directory Acc
 
 ### 🔧 Complete RFC 4512 Parser
 - **Full RFC 4512 Compliance**: Strictly follows the official LDAP schema definition format
+- **OpenLDAP cn=config Support**: Automatically handles OpenLDAP index prefixes like `{57}`
 - **Object Class Parsing**: Complete support for STRUCTURAL, AUXILIARY, and ABSTRACT object classes
 - **Attribute Type Parsing**: Comprehensive parsing of attribute types with all their properties
 - **OID Validation**: Robust validation of numeric object identifiers
@@ -182,6 +183,69 @@ Complete support for attribute type definitions:
   DESC 'RFC2256: common name(s) for which the entity is known by'
   SUP name
 )
+```
+
+## 🔧 OpenLDAP cn=config Support
+
+The parser includes built-in support for OpenLDAP's `cn=config` format, which uses index prefixes to maintain ordering of multi-valued attributes like `olcAttributeTypes` and `olcObjectClasses`.
+
+### Index Prefix Support
+
+OpenLDAP uses numeric prefixes in curly braces to maintain the order of schema definitions:
+
+```ldap
+# OpenLDAP cn=config format with index prefix
+{57}( 1.3.6.1.4.1.7165.2.1.80 NAME 'sambaSupportedEncryptionTypes' 
+      DESC 'Supported encryption types of a trust' 
+      EQUALITY integerMatch 
+      SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+      SINGLE-VALUE )
+
+# Equivalent RFC 4512 pure format (without prefix)
+( 1.3.6.1.4.1.7165.2.1.80 NAME 'sambaSupportedEncryptionTypes' 
+  DESC 'Supported encryption types of a trust' 
+  EQUALITY integerMatch 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 
+  SINGLE-VALUE )
+```
+
+### Automatic Prefix Removal
+
+The parser automatically detects and removes OpenLDAP index prefixes:
+
+```typescript
+import { parseSchema } from '@the-software-compagny/parser_ldap_rfc4512'
+
+// Both formats parse to identical results
+const openLdapFormat = '{57}( 2.5.4.3 NAME \'cn\' DESC \'Common Name\' SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )'
+const rfc4512Format = '( 2.5.4.3 NAME \'cn\' DESC \'Common Name\' SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )'
+
+const result1 = parseSchema(openLdapFormat)
+const result2 = parseSchema(rfc4512Format)
+
+console.log(result1 === result2) // true - identical results
+```
+
+### Supported Prefix Patterns
+
+The parser handles various OpenLDAP prefix formats:
+
+- **Basic format**: `{0}`, `{57}`, `{123}`
+- **With whitespace**: `  {0}  `, `\t{57}\t`
+- **Leading spaces**: `   {0}(definition...)`
+- **Any numeric index**: `{0}` to `{99999}` and beyond
+
+### CLI Support for OpenLDAP Format
+
+The CLI tool seamlessly handles OpenLDAP exports:
+
+```bash
+# Parse OpenLDAP cn=config exports directly
+rfc4512-parser --input openldap-export.ldif --format json
+
+# Example OpenLDAP export file content:
+# {0}( 2.5.4.3 NAME 'cn' DESC 'Common Name' SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+# {1}( 2.5.4.4 NAME 'sn' DESC 'Surname' SUP name )
 ```
 
 ## 🏗️ Project Architecture
