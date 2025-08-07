@@ -1,7 +1,7 @@
 import { generate, type Parser, type ParserBuildOptions } from 'peggy'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { RFC4512ParserError, RFC4512ErrorType } from './interfaces'
+import { RFC4512ParserError, RFC4512ErrorType, type RFC4512ParserOptions } from './interfaces'
 import type { LDAPSchemaType } from './types'
 
 /**
@@ -11,9 +11,18 @@ import type { LDAPSchemaType } from './types'
  * for object classes and attribute types according to RFC 4512.
  * It also supports OpenLDAP cn=config format with optional index prefixes.
  *
+ * In relaxed mode, it can also parse OpenLDAP-specific OID formats like
+ * 'OLcfgOvAt:18.1' which are commonly used in OpenLDAP cn=config schemas
+ * but are not compliant with RFC 4512.
+ *
  * @example
  * ```typescript
+ * // Strict RFC 4512 mode (default)
  * const parser = new RFC4512Parser()
+ *
+ * // Relaxed mode supporting OpenLDAP OIDs
+ * const relaxedParser = new RFC4512Parser({ relaxedMode: true })
+ *
  * const result = parser.parseSchema(`
  *   ( 2.5.6.6
  *     NAME 'person'
@@ -33,15 +42,23 @@ import type { LDAPSchemaType } from './types'
  */
 export class RFC4512Parser {
   private readonly _parser: Parser
+  private readonly _options: RFC4512ParserOptions
 
   /**
    * Constructor - loads and compiles the PEG.js grammar
+   *
+   * @param options - Parser configuration options
+   * @param pegOptions - PEG.js specific build options
    */
-  public constructor(options?: ParserBuildOptions) {
+  public constructor(options?: RFC4512ParserOptions, pegOptions?: ParserBuildOptions) {
+    this._options = {
+      relaxedMode: false,
+      ...options
+    }
     try {
       const grammarPath = path.join(__dirname, './_grammars/rfc4512.pegjs')
       const grammar = readFileSync(grammarPath, 'utf-8')
-      this._parser = generate(grammar, options)
+      this._parser = generate(grammar, pegOptions)
     } catch (error) {
       throw new RFC4512ParserError(
         `Error loading grammar: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -76,6 +93,28 @@ export class RFC4512Parser {
   }
 
   /**
+   * Transform OpenLDAP OIDs to a format acceptable by the grammar in relaxed mode
+   *
+   * @private
+   * @param schemaDefinition - The schema definition that may contain OpenLDAP OIDs
+   * @returns Schema definition with transformed OIDs if in relaxed mode
+   */
+  private transformOpenLDAPOids(schemaDefinition: string): string {
+    if (!this._options.relaxedMode) {
+      return schemaDefinition
+    }
+
+    // Pattern to match OpenLDAP configuration OIDs
+    // Matches: OLcfgOvAt:18.1, OLcfgDbAt:2.3, etc.
+    const openldapOidPattern = /\b(OLcfg(?:Ov|Db|Gl)(?:At|Oc)):([\d.]+)\b/g
+
+    return schemaDefinition.replace(openldapOidPattern, (match, prefix, suffix) => {
+      // In relaxed mode, we keep the OpenLDAP format as-is since our grammar now supports it
+      return match
+    })
+  }
+
+  /**
    * Parse an LDAP schema definition
    *
    * @param schemaDefinition - The schema definition to parse (supports both RFC 4512 format and OpenLDAP cn=config format with index prefixes)
@@ -85,7 +124,10 @@ export class RFC4512Parser {
   public parseSchema<T extends LDAPSchemaType>(schemaDefinition: string): T {
     try {
       // Clean input by removing OpenLDAP prefixes and extra whitespace
-      const cleanInput = this.removeOpenLDAPPrefix(schemaDefinition).trim()
+      let cleanInput = this.removeOpenLDAPPrefix(schemaDefinition).trim()
+
+      // Transform OpenLDAP OIDs if in relaxed mode
+      cleanInput = this.transformOpenLDAPOids(cleanInput)
 
       if (!cleanInput) {
         throw new RFC4512ParserError(
@@ -93,6 +135,18 @@ export class RFC4512Parser {
           RFC4512ErrorType.EMPTY_INPUT,
           schemaDefinition
         )
+      }
+
+      // Check for OpenLDAP OIDs in strict mode
+      if (!this._options.relaxedMode) {
+        const openldapOidPattern = /\b(OLcfg(?:Ov|Db|Gl)(?:At|Oc)):([\d.]+)\b/
+        if (openldapOidPattern.test(cleanInput)) {
+          throw new RFC4512ParserError(
+            'OpenLDAP configuration OIDs are not supported in strict RFC 4512 mode. Use relaxedMode: true to enable support.',
+            RFC4512ErrorType.SYNTAX_ERROR,
+            schemaDefinition
+          )
+        }
       }
 
       // Parse with PEG.js grammar
@@ -136,13 +190,24 @@ export class RFC4512Parser {
         }
 
         // RFC 4512: Validate OID format (dotted decimal notation)
+        // In relaxed mode, also allow OpenLDAP configuration OIDs
         const oidPattern = /^[0-9]+(\.[0-9]+)*$/
-        if (!oidPattern.test(objectClass.oid)) {
+        const openldapOidPattern = /^OLcfg(?:Ov|Db|Gl)(?:At|Oc):[0-9]+(\.[0-9]+)*$/
+
+        const isValidOid = this._options.relaxedMode
+          ? (oidPattern.test(objectClass.oid) || openldapOidPattern.test(objectClass.oid))
+          : oidPattern.test(objectClass.oid)
+
+        if (!isValidOid) {
+          const validFormats = this._options.relaxedMode
+            ? 'dotted decimal notation (e.g., 2.5.6.6) or OpenLDAP configuration format (e.g., OLcfgOvAt:18.1)'
+            : 'dotted decimal notation (e.g., 2.5.6.6)'
+
           throw new RFC4512ParserError(
-            `Invalid OID format: ${objectClass.oid}. Must follow dotted decimal notation`,
+            `Invalid OID format: ${objectClass.oid}. Must follow ${validFormats}`,
             RFC4512ErrorType.INVALID_OID,
             schemaDefinition,
-            { context: 'RFC 4512 - OID must use dotted decimal notation (e.g., 2.5.6.6)' }
+            { context: `RFC 4512 - OID validation (relaxedMode: ${this._options.relaxedMode})` }
           )
         }
 
@@ -232,13 +297,24 @@ export class RFC4512Parser {
         const attributeType = parsed as any
 
         // RFC 4512: Validate OID format
+        // In relaxed mode, also allow OpenLDAP configuration OIDs
         const oidPattern = /^[0-9]+(\.[0-9]+)*$/
-        if (!oidPattern.test(attributeType.oid)) {
+        const openldapOidPattern = /^OLcfg(?:Ov|Db|Gl)(?:At|Oc):[0-9]+(\.[0-9]+)*$/
+
+        const isValidOid = this._options.relaxedMode
+          ? (oidPattern.test(attributeType.oid) || openldapOidPattern.test(attributeType.oid))
+          : oidPattern.test(attributeType.oid)
+
+        if (!isValidOid) {
+          const validFormats = this._options.relaxedMode
+            ? 'dotted decimal notation (e.g., 2.5.4.3) or OpenLDAP configuration format (e.g., OLcfgOvAt:18.1)'
+            : 'dotted decimal notation (e.g., 2.5.4.3)'
+
           throw new RFC4512ParserError(
-            `Invalid OID format: ${attributeType.oid}. Must follow dotted decimal notation`,
+            `Invalid OID format: ${attributeType.oid}. Must follow ${validFormats}`,
             RFC4512ErrorType.INVALID_OID,
             schemaDefinition,
-            { context: 'RFC 4512 - OID must use dotted decimal notation (e.g., 2.5.4.3)' }
+            { context: `RFC 4512 - OID validation (relaxedMode: ${this._options.relaxedMode})` }
           )
         }
 
@@ -263,6 +339,21 @@ export class RFC4512Parser {
             schemaDefinition,
             { context: 'RFC 4512 Section 4.1.2 - AttributeType must inherit from superior or define syntax' }
           )
+        }
+
+        // Validate SYNTAX field format in strict mode
+        if (attributeType.syntax && !this._options.relaxedMode) {
+          const syntaxOid = attributeType.syntax.oid
+          const standardOidPattern = /^[0-9]+(\.[0-9]+)*$/
+
+          if (!standardOidPattern.test(syntaxOid)) {
+            throw new RFC4512ParserError(
+              `Invalid SYNTAX OID format: ${syntaxOid}. In strict mode, SYNTAX must use standard numeric OID format (e.g., '1.3.6.1.4.1.1466.115.121.1.15'). Use relaxedMode: true to support OpenLDAP syntax names.`,
+              RFC4512ErrorType.INVALID_FIELD,
+              schemaDefinition,
+              { context: `RFC 4512 - SYNTAX validation (relaxedMode: ${this._options.relaxedMode})` }
+            )
+          }
         }
 
         // Generic validation for unknown/invalid fields
@@ -363,6 +454,13 @@ export class RFC4512Parser {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Get current parser options
+   */
+  public get options(): RFC4512ParserOptions {
+    return { ...this._options }
   }
 }
 

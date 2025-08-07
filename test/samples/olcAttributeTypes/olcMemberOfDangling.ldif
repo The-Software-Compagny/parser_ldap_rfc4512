@@ -1,0 +1,1 @@
+( OLcfgOvAt:18.1 NAME 'olcMemberOfDangling' DESC 'Behavior with respect to dangling members, constrained to ignore, drop, error' SYNTAX OMsDirectoryString SINGLE-VALUE )

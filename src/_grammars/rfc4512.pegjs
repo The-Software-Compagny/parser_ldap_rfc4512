@@ -52,8 +52,20 @@ attributeTypeDefinition
   }
 
 // Numeric OID (Object Identifier) - e.g., 2.5.6.6
+// Also accepts OpenLDAP configuration OIDs like OLcfgOvAt:18.1 (validation happens in parser)
 oid
+  = openldapOid / numericOid
+
+// Standard RFC 4512 numeric OID
+numericOid
   = digits:[0-9.]+ { return digits.join(""); }
+
+// OpenLDAP configuration OID
+// Examples: OLcfgOvAt:18.1, OLcfgDbAt:2.3, OLcfgGlAt:1.4
+openldapOid
+  = prefix:("OLcfgOvAt" / "OLcfgDbAt" / "OLcfgGlAt" / "OLcfgOvOc" / "OLcfgDbOc" / "OLcfgGlOc") ":" suffix:[0-9.]+ {
+      return prefix + ":" + suffix.join("");
+    }
 
 // NAME field - can be a single quoted string or multiple quoted strings in parentheses
 // Examples: NAME 'person' or NAME ( 'alias1' 'alias2' )
@@ -111,12 +123,16 @@ syntax
   = _ "SYNTAX" _ val:syntaxValue { return val; }
 
 syntaxValue
-  = oid:oid length:("{" [0-9]+ "}")? {
+  = oid:(oid / openldapSyntaxName) length:("{" [0-9]+ "}")? {
     return {
       oid,
       length: length ? parseInt(length[1].join("")) : undefined
     };
   }
+
+// OpenLDAP syntax names (in addition to standard OIDs)
+openldapSyntaxName
+  = "OMsDirectoryString" / "OMsInteger" / "OMsOctetString" / "OMsBoolean" / [a-zA-Z][a-zA-Z0-9_-]*
 
 // SINGLE-VALUE - indicates single value attribute
 singleValue
