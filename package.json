@@ -1,6 +1,6 @@
 {
   "name": "@the-software-compagny/parser_ldap_rfc4512",
-  "version": "0.2.1",
+  "version": "0.2.0",
   "description": "A TypeScript parser for LDAP schema definitions based on RFC 4512, using PEG.js grammar",
   "repository": "https://github.com/The-Software-Compagny/parser_ldap_rfc4512.git",
   "author": "tacxou <12997062+tacxou@users.noreply.github.com> (https://github.com/tacxou)",
