@@ -55,6 +55,7 @@ export class RFC4512Parser {
       relaxedMode: false,
       ...options
     }
+
     try {
       const grammarPath = path.join(__dirname, './_grammars/rfc4512.pegjs')
       const grammar = readFileSync(grammarPath, 'utf-8')
@@ -162,12 +163,12 @@ export class RFC4512Parser {
         )
       }
 
-      if (!parsed.name) {
+      if (parsed.type !== 'ldapSyntax' && !parsed.name) {
         throw new RFC4512ParserError(
           'Missing NAME in schema definition',
           RFC4512ErrorType.MISSING_FIELD,
           schemaDefinition,
-          { context: 'NAME field is required for all LDAP schema definitions' }
+          { context: 'NAME field is required for objectClass and attributeType definitions' }
         )
       }
 
@@ -212,32 +213,34 @@ export class RFC4512Parser {
         }
 
         // RFC 4512: Validate SUP field constraints
-        if (objectClass.sup && typeof objectClass.sup === 'string') {
-          // SUP should not be an objectClass type keyword
-          const reservedKeywords = ['STRUCTURAL', 'AUXILIARY', 'ABSTRACT', 'MUST', 'MAY', 'DESC', 'NAME', 'OBSOLETE']
-          if (reservedKeywords.includes(objectClass.sup.toUpperCase())) {
-            throw new RFC4512ParserError(
-              `Invalid SUP value: ${objectClass.sup}. SUP should reference a parent objectClass name, not a reserved keyword`,
-              RFC4512ErrorType.INVALID_FIELD,
-              schemaDefinition,
-              { context: 'RFC 4512 - SUP must reference a valid parent objectClass' }
-            )
-          }
+        if (objectClass.sup) {
+          for (const supValue of objectClass.sup) {
+            // SUP should not be an objectClass type keyword
+            const reservedKeywords = ['STRUCTURAL', 'AUXILIARY', 'ABSTRACT', 'MUST', 'MAY', 'DESC', 'NAME', 'OBSOLETE']
+            if (reservedKeywords.includes(supValue.toUpperCase())) {
+              throw new RFC4512ParserError(
+                `Invalid SUP value: ${supValue}. SUP should reference a parent objectClass name, not a reserved keyword`,
+                RFC4512ErrorType.INVALID_FIELD,
+                schemaDefinition,
+                { context: 'RFC 4512 - SUP must reference a valid parent objectClass' }
+              )
+            }
 
-          // SUP should not be empty or contain invalid characters
-          const supPattern = /^[a-zA-Z][a-zA-Z0-9_-]*$/
-          if (!supPattern.test(objectClass.sup)) {
-            throw new RFC4512ParserError(
-              `Invalid SUP format: ${objectClass.sup}. Must be a valid objectClass name`,
-              RFC4512ErrorType.INVALID_FIELD,
-              schemaDefinition,
-              { context: 'RFC 4512 - SUP must follow objectClass naming conventions' }
-            )
+            // SUP should not be empty or contain invalid characters
+            const supPattern = /^[a-zA-Z][a-zA-Z0-9_-]*$/
+            if (!supPattern.test(supValue)) {
+              throw new RFC4512ParserError(
+                `Invalid SUP format: ${supValue}. Must be a valid objectClass name`,
+                RFC4512ErrorType.INVALID_FIELD,
+                schemaDefinition,
+                { context: 'RFC 4512 - SUP must follow objectClass naming conventions' }
+              )
+            }
           }
         }
 
         // RFC 4512: Validate MUST and MAY attributes don't overlap
-        if (objectClass.must && objectClass.may) {
+        if (objectClass.must && objectClass.may && !this._options.allowMustMayOverlap) {
           const mustSet = new Set(objectClass.must)
           const maySet = new Set(objectClass.may)
           const overlap = [...mustSet].filter(attr => maySet.has(attr))
@@ -450,7 +453,7 @@ export class RFC4512Parser {
   public extractName(schemaDefinition: string): string | null {
     try {
       const result = this.parseSchema(schemaDefinition);
-      return result.name;
+      return result.type === 'ldapSyntax' ? null : result.name;
     } catch {
       return null;
     }

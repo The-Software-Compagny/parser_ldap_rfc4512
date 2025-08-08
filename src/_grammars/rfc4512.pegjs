@@ -6,27 +6,44 @@
  * components like OID, NAME, DESC, SUP, MUST, MAY, EQUALITY, SYNTAX, etc.
  */
 
-// Entry point - parses either an AttributeType or ObjectClass definition
+// Entry point - parses either an AttributeType, ObjectClass or LDAP Syntax definition
 start
-  = attributeTypeDefinition / objectClassDefinition
+  = attributeTypeDefinition / objectClassDefinition / ldapSyntaxDefinition
 
 // ObjectClass definition
-// Format: ( <oid> NAME <name> DESC <desc> SUP <sup> STRUCTURAL|AUXILIARY|ABSTRACT MUST <attrs> MAY <attrs> )
+// Format: ( <oid> NAME <name> [DESC <desc>] [SUP <sup>] [STRUCTURAL|AUXILIARY|ABSTRACT] [MUST <attrs>] [MAY <attrs>] [X-* extensions] )
+// Note: After OID and NAME, other elements can appear in any order
 objectClassDefinition
-  = _ "(" _ oid:oid _ name:name _ desc:desc? _ sup:sup? _ kind:kind? _ must:must? _ may:may? _ extensions:extension* _ ")" _ {
-    const extensionsObj = extensions.length > 0 ? Object.fromEntries(extensions) : undefined;
-    return {
+  = _ "(" _ oid:oid _ name:name _ elements:objectClassElement* _ extensions:extension* _ ")" _ {
+    const result = {
       type: 'objectClass',
       oid,
       name,
-      desc,
-      sup,
-      objectClassType: kind,
-      must,
-      may,
-      extensions: extensionsObj
+      desc: null,
+      sup: null,
+      objectClassType: null,
+      must: null,
+      may: null
     };
+
+    // Process elements in any order
+    elements.forEach(element => {
+      if (element.type === 'desc') result.desc = element.value;
+      else if (element.type === 'sup') result.sup = element.value;
+      else if (element.type === 'kind') result.objectClassType = element.value;
+      else if (element.type === 'must') result.must = element.value;
+      else if (element.type === 'may') result.may = element.value;
+    });
+
+    const extensionsObj = extensions.length > 0 ? Object.fromEntries(extensions) : undefined;
+    if (extensionsObj) result.extensions = extensionsObj;
+
+    return result;
   }
+
+// Helper rule for object class elements that can appear in any order
+objectClassElement
+  = element:(objectClassDesc / sup / kind / must / may) { return element; }
 
 // AttributeType definition
 // Format: ( <oid> NAME <name> DESC <desc> EQUALITY <equality> SYNTAX <syntax> SINGLE-VALUE? )
@@ -47,6 +64,19 @@ attributeTypeDefinition
       collective,
       noUserModification,
       usage,
+      extensions: extensionsObj
+    };
+  }
+
+// LDAP Syntax definition (olcLdapSyntaxes)
+// Format: ( <oid> DESC <desc>? [X-* extensions] )
+ldapSyntaxDefinition
+  = _ "(" _ oid:oid _ desc:desc? _ extensions:extension* _ ")" _ {
+    const extensionsObj = extensions.length > 0 ? Object.fromEntries(extensions) : undefined;
+    return {
+      type: 'ldapSyntax',
+      oid,
+      desc,
       extensions: extensionsObj
     };
   }
@@ -79,10 +109,19 @@ name
 desc
   = _ "DESC" _ str:quotedString { return str; }
 
+// DESC field for ObjectClass - returns structured object for element processing
+objectClassDesc
+  = _ "DESC" _ str:quotedString { return { type: 'desc', value: str }; }
+
 // SUP field for ObjectClass - superior object class
-// Example: SUP top
+// Example: SUP top or SUP ( organization $ organizationalUnit )
 sup
-  = _ "SUP" _ val:word { return val; }
+  = _ "SUP" _ val:supValue { return { type: 'sup', value: val }; }
+
+// SUP value - can be a single word or multiple words in parentheses
+supValue
+  = "(" _ items:wordList _ ")" { return items; }
+  / word:word { return [word]; }
 
 // SUP field for AttributeType - superior attribute type
 attributeSup
@@ -90,17 +129,17 @@ attributeSup
 
 // Object class kind - one of STRUCTURAL, AUXILIARY, or ABSTRACT
 kind
-  = _ val:("STRUCTURAL" / "AUXILIARY" / "ABSTRACT") { return val; }
+  = _ val:("STRUCTURAL" / "AUXILIARY" / "ABSTRACT") { return { type: 'kind', value: val }; }
 
 // MUST field - required attributes list
 // Example: MUST ( cn $ sn $ objectClass )
 must
-  = _ "MUST" _ val:attrList { return val; }
+  = _ "MUST" _ val:attrList { return { type: 'must', value: val }; }
 
 // MAY field - optional attributes list
 // Example: MAY ( description $ telephoneNumber )
 may
-  = _ "MAY" _ val:attrList { return val; }
+  = _ "MAY" _ val:attrList { return { type: 'may', value: val }; }
 
 // EQUALITY field - equality matching rule
 // Example: EQUALITY caseIgnoreMatch
