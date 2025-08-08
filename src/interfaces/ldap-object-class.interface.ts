@@ -51,16 +51,18 @@ export interface LDAPObjectClassInterface {
   desc?: string
 
   /**
-   * Superior object class from which this inherits
+   * Superior object class(es) from which this inherits
    *
-   * Specifies the parent object class from which this object class inherits
+   * Specifies the parent object class(es) from which this object class inherits
    * attributes and structural characteristics. Most object classes inherit
-   * from 'top' either directly or indirectly.
+   * from 'top' either directly or indirectly. Always returned as an array,
+   * even for single inheritance.
    *
-   * @example "top" // Root object class (most common)
-   * @example "person" // Inherits from person object class
+   * @example ["top"] // Root object class (most common)
+   * @example ["person"] // Inherits from person object class
+   * @example ["organization", "organizationalUnit"] // Multiple inheritance
    */
-  sup?: string
+  sup?: string[]
 
   /**
    * Object class type classification

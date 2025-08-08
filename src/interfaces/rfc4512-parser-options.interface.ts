@@ -16,4 +16,18 @@ export interface RFC4512ParserOptions {
    * @default false - strict RFC 4512 compliance
    */
   relaxedMode?: boolean
+
+  /**
+   * Allow attributes to appear in both MUST and MAY lists
+   *
+   * When enabled, the parser will not throw an error if the same attribute
+   * appears in both MUST and MAY lists. This is useful for legacy schemas
+   * or specific schema definitions that may have this pattern.
+   *
+   * Note: This violates RFC 4512 Section 4.1.1 which states that MUST and MAY
+   * attributes must be mutually exclusive.
+   *
+   * @default false - enforce RFC 4512 compliance (MUST and MAY are mutually exclusive)
+   */
+  allowMustMayOverlap?: boolean
 }
