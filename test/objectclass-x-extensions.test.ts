@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
 import { LDAPObjectClassInterface, RFC4512Parser } from '../src'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 /**
  * Test suite for RFC4512Parser - ObjectClass X-* Extensions Support
@@ -54,7 +54,7 @@ describe('RFC4512Parser - ObjectClass X-* Extensions Support', () => {
         expect(result.oid).toBe('1.3.6.1.4.1.29426.2.6.1')
         expect(result.name).toBe('testObjectClassWithExtensions')
         expect(result.desc).toBe('Test object class with X-* extensions')
-        expect(result.sup).toBe('top')
+        expect(result.sup).toEqual(['top'])
         expect(result.objectClassType).toBe('STRUCTURAL')
         expect(result.must).toEqual(['cn'])
         expect(result.may).toEqual(['description'])

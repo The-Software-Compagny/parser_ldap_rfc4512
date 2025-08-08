@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import { RFC4512Parser, RFC4512ErrorType } from '../src'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { RFC4512Parser } from '../src'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 /**
  * Test suite for RFC4512Parser - Malformed ObjectClass LDIF parsing functionality

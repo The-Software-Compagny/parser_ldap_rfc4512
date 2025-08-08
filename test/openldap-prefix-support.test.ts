@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
-import { RFC4512Parser } from '../src'
+import { LDAPObjectClassInterface, RFC4512Parser } from '../src'
 
 /**
  * Test suite for OpenLDAP cn=config prefix support in RFC4512Parser
@@ -90,16 +90,16 @@ describe('RFC4512Parser - OpenLDAP cn=config Prefix Support', () => {
   it('should handle ObjectClass schemas with OpenLDAP prefixes', () => {
     const objectClassWithPrefix = '{5}( 2.5.6.6 NAME \'person\' DESC \'RFC2256: a person\' SUP top STRUCTURAL MUST ( sn $ cn ) MAY ( userPassword $ telephoneNumber $ seeAlso $ description ) )'
 
-    const result = parser.parseSchema(objectClassWithPrefix)
+    const result = parser.parseSchema<LDAPObjectClassInterface>(objectClassWithPrefix)
 
     expect(result.type).toBe('objectClass')
     expect(result.oid).toBe('2.5.6.6')
     expect(result.name).toBe('person')
     expect(result.desc).toBe('RFC2256: a person')
-    expect((result as any).objectClassType).toBe('STRUCTURAL')
-    expect((result as any).sup).toBe('top')
-    expect((result as any).must).toEqual(['sn', 'cn'])
-    expect((result as any).may).toEqual(['userPassword', 'telephoneNumber', 'seeAlso', 'description'])
+    expect(result.objectClassType).toBe('STRUCTURAL')
+    expect(result.sup).toEqual(['top'])
+    expect(result.must).toEqual(['sn', 'cn'])
+    expect(result.may).toEqual(['userPassword', 'telephoneNumber', 'seeAlso', 'description'])
   })
 
   /**

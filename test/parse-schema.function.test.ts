@@ -75,7 +75,7 @@ describe('parseSchema utility function', () => {
         trace: false
       }
 
-      const result = parseSchema(schema, options)
+      const result = parseSchema(schema, undefined, options)
 
       expect(result).toBeDefined()
       expect(result.type).toBe('objectClass')
@@ -96,7 +96,7 @@ describe('parseSchema utility function', () => {
         trace: true
       }
 
-      const result = parseSchema(schema, options)
+      const result = parseSchema(schema, undefined, options)
 
       expect(result).toBeDefined()
       expect(result.type).toBe('attributeType')
@@ -119,7 +119,7 @@ describe('parseSchema utility function', () => {
         cache: false
       }
 
-      const result = parseSchema(schema, options)
+      const result = parseSchema(schema, undefined, options)
 
       expect(result).toBeDefined()
       expect(result.type).toBe('objectClass')
@@ -168,11 +168,11 @@ describe('parseSchema utility function', () => {
       }
 
       expect(() => {
-        parseSchema('', options)
+        parseSchema('', undefined, options)
       }).toThrow(RFC4512ParserError)
 
       expect(() => {
-        parseSchema('', options)
+        parseSchema('', undefined, options)
       }).toThrow('Schema definition cannot be empty')
     })
   })
@@ -263,7 +263,7 @@ describe('parseSchema utility function', () => {
         optimize: 'size'
       }
 
-      const result = parseSchema(schema, options)
+      const result = parseSchema(schema, undefined, options)
 
       expect(result).toBeDefined()
       expect(result.type).toBe('attributeType')
